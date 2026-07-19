@@ -174,9 +174,26 @@ def info(mission: str = typer.Argument(..., help="Mission à inspecter.")) -> No
     with _errors():
         data = container.mission_info(mission)
     table = Table(show_header=False, title=f"Mission « {mission} »")
-    for key in ("mission", "flavor", "status", "image", "network", "workspace", "created", "container"):
+    for key in (
+        "mission", "flavor", "status", "image", "network",
+        "workspace", "my_resources", "resources", "created", "container",
+    ):
         table.add_row(f"[bold]{key}[/]", str(data[key]))
     console.print(table)
+
+
+@app.command()
+def resources() -> None:
+    """Affiche (et crée) les dossiers partagés my-resources et resources."""
+    with _errors():
+        paths = container.ensure_shared_dirs()
+    console.print("Dossiers partagés, montés dans [bold]chaque[/] mission :")
+    console.print(
+        f"  [bold]my-resources[/] (rw, {container.MY_RESOURCES_MOUNT}) : {paths['my_resources']}"
+    )
+    console.print(
+        f"  [bold]resources[/]    (ro, {container.RESOURCES_MOUNT}) : {paths['resources']}"
+    )
 
 
 @app.command()

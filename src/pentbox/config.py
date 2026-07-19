@@ -22,5 +22,6 @@ CONFIG_DIR: Path = _xdg("XDG_CONFIG_HOME", Path.home() / ".config") / APP_NAME
 DATA_DIR: Path = _xdg("XDG_DATA_HOME", Path.home() / ".local" / "share") / APP_NAME
 
 # Données runtime (créées à la demande par le lot 1+).
-WORKSPACES_DIR: Path = DATA_DIR / "workspaces"
-RESOURCES_DIR: Path = DATA_DIR / "resources"
+WORKSPACES_DIR: Path = DATA_DIR / "workspaces"       # un dossier par mission
+RESOURCES_DIR: Path = DATA_DIR / "resources"         # bibliothèque partagée (ro)
+MY_RESOURCES_DIR: Path = DATA_DIR / "my-resources"   # espace perso partagé (rw)

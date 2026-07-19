@@ -48,7 +48,9 @@ LABEL_MISSION = "pentbox.mission"
 LABEL_FLAVOR = "pentbox.flavor"
 LABEL_CREATED = "pentbox.created"
 
-WORKSPACE_MOUNT = "/workspace"
+WORKSPACE_MOUNT = "/workspace"          # propre à la mission (rw)
+MY_RESOURCES_MOUNT = "/opt/my-resources"  # partagé entre missions (rw)
+RESOURCES_MOUNT = "/opt/resources"        # bibliothèque partagée (ro)
 
 # Choisit le meilleur shell dispo dans l'image (zsh quand on l'ajoutera, sinon
 # bash, sinon sh) — garde `exec` fonctionnel quelle que soit la base.
@@ -161,6 +163,43 @@ def build_image(flavor: str, profile: str = "core") -> str:
 
 
 # --------------------------------------------------------------------------- #
+# Ressources partagées (montées dans TOUTES les missions)
+# --------------------------------------------------------------------------- #
+
+_SHARED_READMES = {
+    "my_resources": (
+        config.MY_RESOURCES_DIR,
+        "# my-resources\n\n"
+        "Ton espace **personnel**, partagé entre **toutes** les missions pentbox "
+        f"et monté en lecture/écriture sur `{MY_RESOURCES_MOUNT}` dans chaque "
+        "conteneur.\n\n"
+        "Mets-y tes scripts, configs, notes, outils perso : ils persistent et "
+        "sont dispo partout.\n",
+    ),
+    "resources": (
+        config.RESOURCES_DIR,
+        "# resources\n\n"
+        "Bibliothèque **partagée en lecture seule**, montée sur "
+        f"`{RESOURCES_MOUNT}` dans chaque conteneur.\n\n"
+        "Mets-y tes wordlists, binaires et payloads communs. Lecture seule côté "
+        "conteneur pour protéger la biblio ; édite-la depuis l'host.\n",
+    ),
+}
+
+
+def ensure_shared_dirs() -> dict[str, str]:
+    """Crée les dossiers partagés (+ un README au 1er passage). Retourne leurs chemins."""
+    paths: dict[str, str] = {}
+    for key, (path, readme) in _SHARED_READMES.items():
+        path.mkdir(parents=True, exist_ok=True)
+        marker = path / "README.md"
+        if not marker.exists():
+            marker.write_text(readme, encoding="utf-8")
+        paths[key] = str(path)
+    return paths
+
+
+# --------------------------------------------------------------------------- #
 # Cycle de vie
 # --------------------------------------------------------------------------- #
 
@@ -185,6 +224,7 @@ def create_mission(mission: str, flavor: str, *, start: bool = True) -> str:
 
     workspace = config.WORKSPACES_DIR / mission
     workspace.mkdir(parents=True, exist_ok=True)
+    ensure_shared_dirs()
 
     labels = {
         LABEL_MISSION: mission,
@@ -197,7 +237,11 @@ def create_mission(mission: str, flavor: str, *, start: bool = True) -> str:
         command=["sleep", "infinity"],  # garde le conteneur vivant pour `exec`
         name=name,
         labels=labels,
-        volumes={str(workspace): {"bind": WORKSPACE_MOUNT, "mode": "rw"}},
+        volumes={
+            str(workspace): {"bind": WORKSPACE_MOUNT, "mode": "rw"},
+            str(config.MY_RESOURCES_DIR): {"bind": MY_RESOURCES_MOUNT, "mode": "rw"},
+            str(config.RESOURCES_DIR): {"bind": RESOURCES_MOUNT, "mode": "ro"},
+        },
         network_mode="host",  # indispensable pour le pentest (scans, Responder…)
         tty=True,
         stdin_open=True,
@@ -255,6 +299,8 @@ def mission_info(mission: str) -> dict:
         "created": container.labels.get(LABEL_CREATED, "?"),
         "network": net,
         "workspace": mounts.get(WORKSPACE_MOUNT, "?"),
+        "my_resources": mounts.get(MY_RESOURCES_MOUNT, "?"),
+        "resources": mounts.get(RESOURCES_MOUNT, "?"),
         "container": container.name,
     }
 
