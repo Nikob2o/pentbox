@@ -20,6 +20,7 @@ classifiers = [
 dependencies = [
     "typer>=0.12",
     "docker>=7.0",
+    "rich>=13.0",
 ]
 
 [project.scripts]
