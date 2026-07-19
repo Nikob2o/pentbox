@@ -1,6 +1,29 @@
 # pentbox — zshrc minimal (étoffé aux lots suivants).
 autoload -Uz compinit && compinit -u 2>/dev/null
 
+# Édition de ligne façon emacs + flèches liées à l'historique. Sans ça,
+# EDITOR=vim bascule ZLE en mode vi et les flèches insèrent des caractères au
+# lieu de parcourir l'historique. On lie les deux variantes de séquences
+# (curseur normal ^[[A et mode application ^[OA) + terminfo → robuste, y
+# compris sous asciinema.
+bindkey -e
+autoload -Uz up-line-or-beginning-search down-line-or-beginning-search
+zle -N up-line-or-beginning-search
+zle -N down-line-or-beginning-search
+bindkey '^[[A' up-line-or-beginning-search
+bindkey '^[[B' down-line-or-beginning-search
+bindkey '^[OA' up-line-or-beginning-search
+bindkey '^[OB' down-line-or-beginning-search
+zmodload zsh/terminfo 2>/dev/null
+[[ -n "${terminfo[kcuu1]}" ]] && bindkey "${terminfo[kcuu1]}" up-line-or-beginning-search
+[[ -n "${terminfo[kcud1]}" ]] && bindkey "${terminfo[kcud1]}" down-line-or-beginning-search
+
+# Historique.
+export HISTSIZE=50000
+export SAVEHIST=50000
+export HISTFILE=~/.zsh_history
+setopt SHARE_HISTORY HIST_IGNORE_DUPS HIST_IGNORE_SPACE
+
 setopt PROMPT_SUBST
 PROMPT='%F{cyan}pentbox%f:%F{blue}%~%f %# '
 
@@ -9,6 +32,3 @@ alias la='ls -A --color=auto'
 alias l='ls -CF --color=auto'
 
 export EDITOR=vim
-export HISTSIZE=50000
-export SAVEHIST=50000
-export HISTFILE=~/.zsh_history
