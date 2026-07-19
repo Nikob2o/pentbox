@@ -139,6 +139,11 @@ def _parse_ports(ports: list[str]) -> dict[str, int]:
     return mapping
 
 
+def _docker_reason(exc: Exception) -> str:
+    """Extrait un message lisible d'une erreur docker-py (sans le bruit HTTP)."""
+    return str(getattr(exc, "explanation", None) or exc)
+
+
 def _host_timezone() -> str | None:
     """Devine la timezone de l'host (TZ, /etc/timezone, ou lien /etc/localtime)."""
     tz = os.environ.get("TZ")
@@ -285,6 +290,11 @@ def create_mission(
             "partagés) — ajoute `--network bridge`."
         )
 
+    for dev in devices or []:
+        host_dev = dev.split(":", 1)[0]
+        if not Path(host_dev).exists():
+            raise PentboxError(f"device introuvable sur l'host : {host_dev}")
+
     workspace = config.WORKSPACES_DIR / mission
     workspace.mkdir(parents=True, exist_ok=True)
     ensure_shared_dirs()
@@ -338,7 +348,15 @@ def create_mission(
 
     container = client.containers.create(image, **create_kwargs)
     if start:
-        container.start()
+        try:
+            container.start()
+        except DockerException as exc:
+            # Rollback : ne pas laisser de conteneur fantôme si le start échoue.
+            try:
+                container.remove(force=True)
+            except DockerException:
+                pass
+            raise PentboxError(f"démarrage impossible : {_docker_reason(exc)}") from exc
     return str(workspace)
 
 
