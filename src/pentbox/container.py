@@ -13,9 +13,11 @@ seule source de vérité sur l'état des missions — pas de fichier d'état par
 
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 from datetime import datetime, timezone
+from pathlib import Path
 
 import docker
 from docker.errors import DockerException, ImageNotFound, NotFound
@@ -24,13 +26,22 @@ from pentbox import config
 
 IMAGE_FLAVORS = ("debian", "blackarch")
 
-# Lot 1 : on pointe sur des images standard pour pouvoir tester le wrapper tout
-# de suite. Lot 2 : repointer vers nos images custom
-# (ex. docker.io/<user>/pentbox-debian). Le reste du code ne bouge pas.
+# Nos images custom (lot 2). Tags locaux tant qu'aucun registre n'est configuré ;
+# le lot 6 les repointera vers Docker Hub (ex. docker.io/<user>/pentbox-debian)
+# sans que le reste du code ne bouge.
 FLAVOR_IMAGES = {
-    "debian": "debian:12-slim",
-    "blackarch": "blackarchlinux/blackarch:latest",
+    "debian": "pentbox-debian:local",
+    "blackarch": "pentbox-blackarch:local",
 }
+FLAVOR_DOCKERFILE = {
+    "debian": "debian.dockerfile",
+    "blackarch": "blackarch.dockerfile",
+}
+
+# Racine du repo (contexte de build, pour COPY assets/). Fonctionne en install
+# éditable ; le build est une activité dev/CI, l'utilisateur final fait un pull.
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+IMAGES_DIR = PROJECT_ROOT / "images"
 
 CONTAINER_PREFIX = "pentbox-"
 LABEL_MISSION = "pentbox.mission"
@@ -109,6 +120,35 @@ def pull_image(flavor: str) -> str:
     repo, tag = _split_ref(image)
     client.images.pull(repo, tag=tag)
     return image
+
+
+def build_image(flavor: str, profile: str = "core") -> str:
+    """Build l'image custom depuis images/<flavor>.dockerfile. Retourne le tag.
+
+    Délégué à `docker build` (streaming + BuildKit). Contexte = racine du repo
+    (pour COPY assets/). Les UID/GID de l'host sont injectés pour que les
+    fichiers du workspace n'appartiennent pas à root. Réservé au dev/CI.
+    """
+    if flavor not in FLAVOR_DOCKERFILE:
+        raise PentboxError(
+            f"saveur inconnue « {flavor} » (dispo : {', '.join(FLAVOR_DOCKERFILE)})."
+        )
+    dockerfile = IMAGES_DIR / FLAVOR_DOCKERFILE[flavor]
+    if not dockerfile.exists():
+        raise PentboxError(f"Dockerfile absent : {dockerfile} (saveur pas encore prête ?).")
+    tag = FLAVOR_IMAGES[flavor]
+    cmd = [
+        "docker", "build",
+        "-f", str(dockerfile),
+        "-t", tag,
+        "--build-arg", f"PROFILE={profile}",
+        "--build-arg", f"HOST_UID={os.getuid()}",
+        "--build-arg", f"HOST_GID={os.getgid()}",
+        str(PROJECT_ROOT),
+    ]
+    if subprocess.call(cmd) != 0:
+        raise PentboxError("le build a échoué (voir la sortie docker ci-dessus).")
+    return tag
 
 
 # --------------------------------------------------------------------------- #

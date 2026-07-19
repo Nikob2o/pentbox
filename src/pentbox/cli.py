@@ -62,15 +62,26 @@ def _errors():
 @app.command()
 def install(
     image: str = typer.Argument("debian", help="Saveur d'image : debian | blackarch."),
-    build: bool = typer.Option(False, "--build", help="Builder en local (lot 2)."),
+    build: bool = typer.Option(False, "--build", help="Builder l'image en local."),
+    profile: str = typer.Option(
+        "core", "--profile", help="core (léger) | full (arsenal Kali, lourd → CI)."
+    ),
 ) -> None:
-    """Récupère (pull) une image pentbox."""
-    if build:
-        console.print("[yellow]--build[/] arrivera au lot 2 ; pour l'instant on pull.")
+    """Récupère (pull) ou build une image pentbox."""
     with _errors():
-        with console.status(f"Récupération de l'image « {image} »…"):
-            ref = container.pull_image(image)
-    console.print(f"[green]✓[/] image prête : [bold]{ref}[/]")
+        if build:
+            console.print(
+                f"[cyan]Build de l'image « {image} » (profil {profile})…[/] "
+                "cela peut être long."
+            )
+            ref = container.build_image(image, profile)
+            console.print(f"[green]✓[/] image construite : [bold]{ref}[/]")
+        else:
+            raise container.PentboxError(
+                "aucun registre configuré pour l'instant — construis l'image en local :\n"
+                f"    pentbox install {image} --build\n"
+                "  (le pull depuis Docker Hub arrivera au lot 6.)"
+            )
 
 
 @app.command()

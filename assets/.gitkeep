@@ -1,3 +1,0 @@
-# Placeholder — ce dossier hébergera la config partagée (zsh/tmux, aliases,
-# entrypoint, resources) copiée dans chaque image quelle que soit la base.
-# Voir FAISABILITE.md § « Principes d'architecture ».
