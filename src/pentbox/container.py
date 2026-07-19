@@ -415,11 +415,13 @@ def mission_info(mission: str) -> dict:
     }
 
 
-def exec_mission(mission: str, command: str = "") -> int:
+def exec_mission(mission: str, command: str = "", *, log: bool = True) -> int:
     """Ouvre un shell (ou lance une commande) dans le conteneur.
 
-    Délégué à `docker exec` : le SDK gère mal l'interactif. Retourne le code de
-    sortie de la commande.
+    Délégué à `docker exec` (le SDK gère mal l'interactif). Le shell interactif
+    passe par `pentbox-shell` dans l'image (choix du shell + logging asciinema
+    piloté par PENTBOX_LOG) ; en repli — conteneur sans le script, ex. image
+    antérieure au lot 5 — on ouvre un shell simple. Retourne le code de sortie.
     """
     container = _get_container(_client(), mission)
     if container.status != "running":
@@ -427,11 +429,23 @@ def exec_mission(mission: str, command: str = "") -> int:
             f"mission « {mission} » arrêtée — `pentbox start {mission}` d'abord."
         )
 
-    docker_cmd = ["docker", "exec", "-w", WORKSPACE_MOUNT]
-    docker_cmd.append("-it" if sys.stdin.isatty() else "-i")
-    docker_cmd.append(container_name(mission))
+    name = container_name(mission)
+    interactive = "-it" if sys.stdin.isatty() else "-i"
+
     if command:
-        docker_cmd += ["sh", "-c", command]
-    else:
-        docker_cmd += ["sh", "-c", _SHELL_PICKER]
-    return subprocess.call(docker_cmd)
+        return subprocess.call(
+            ["docker", "exec", "-w", WORKSPACE_MOUNT, interactive, name, "sh", "-c", command]
+        )
+
+    term = os.environ.get("TERM", "xterm-256color")
+    code = subprocess.call([
+        "docker", "exec", "-w", WORKSPACE_MOUNT,
+        "-e", f"TERM={term}",
+        "-e", f"PENTBOX_LOG={'1' if log else '0'}",
+        interactive, name, "pentbox-shell",
+    ])
+    if code == 127:  # pentbox-shell absent (conteneur d'avant le lot 5) → repli
+        code = subprocess.call(
+            ["docker", "exec", "-w", WORKSPACE_MOUNT, interactive, name, "sh", "-c", _SHELL_PICKER]
+        )
+    return code

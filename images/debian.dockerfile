@@ -25,7 +25,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       zsh tmux vim less \
       iproute2 iputils-ping dnsutils whois netcat-openbsd socat \
       openssh-client \
-      python3 python3-pip pipx \
+      python3 python3-pip pipx asciinema \
       nmap masscan hydra medusa john sqlmap wfuzz dirb whatweb dnsrecon proxychains4 \
     && rm -rf /var/lib/apt/lists/*
 
@@ -50,7 +50,8 @@ RUN groupadd -g "$HOST_GID" "$USERNAME" \
 # --- Assets communs (config partagée, base-agnostique) ---------------------- #
 COPY assets/skel/ /home/${USERNAME}/
 COPY assets/entrypoint.sh /usr/local/bin/pentbox-entrypoint
-RUN chmod +x /usr/local/bin/pentbox-entrypoint \
+COPY assets/pentbox-shell /usr/local/bin/pentbox-shell
+RUN chmod +x /usr/local/bin/pentbox-entrypoint /usr/local/bin/pentbox-shell \
     && chown -R "$HOST_UID:$HOST_GID" /home/${USERNAME}
 
 LABEL org.opencontainers.image.title="pentbox-debian" \

@@ -17,7 +17,7 @@ from docker.errors import DockerException
 from rich.console import Console
 from rich.table import Table
 
-from pentbox import __version__, container
+from pentbox import __version__, config, container
 
 app = typer.Typer(
     name="pentbox",
@@ -108,7 +108,9 @@ def update(
 @app.command()
 def create(
     mission: str = typer.Argument(..., help="Nom de la mission / du conteneur."),
-    image: str = typer.Option("debian", "--image", "-i", help="Saveur d'image."),
+    image: Optional[str] = typer.Option(
+        None, "--image", "-i", help="Saveur d'image (défaut : config)."
+    ),
     comment: str = typer.Option("", "--comment", "-c", help="Annotation libre de la mission."),
     env: Optional[list[str]] = typer.Option(
         None, "--env", "-e", help="Variable d'env KEY=VAL (répétable)."
@@ -124,10 +126,11 @@ def create(
     no_start: bool = typer.Option(False, "--no-start", help="Créer sans démarrer."),
 ) -> None:
     """Crée un conteneur pour une mission, avec son workspace persistant."""
+    resolved_image = image or config.load_config()["defaults"]["image"]
     with _errors():
         workspace = container.create_mission(
             mission,
-            image,
+            resolved_image,
             start=not no_start,
             comment=comment or None,
             env=env,
@@ -161,10 +164,14 @@ def stop(mission: str = typer.Argument(..., help="Mission à arrêter.")) -> Non
 def run_exec(
     mission: str = typer.Argument(..., help="Mission cible."),
     command: str = typer.Argument("", help="Commande à exécuter (défaut : shell interactif)."),
+    log: Optional[bool] = typer.Option(
+        None, "--log/--no-log", help="Enregistrer la session en asciinema (défaut : config)."
+    ),
 ) -> None:
     """Ouvre un shell (ou lance une commande) dans le conteneur d'une mission."""
+    do_log = config.load_config()["logging"]["enabled"] if log is None else log
     with _errors():
-        code = container.exec_mission(mission, command)
+        code = container.exec_mission(mission, command, log=do_log)
     raise typer.Exit(code=code)
 
 
@@ -218,6 +225,20 @@ def resources() -> None:
     console.print(
         f"  [bold]resources[/]    (ro, {container.RESOURCES_MOUNT}) : {paths['resources']}"
     )
+
+
+@app.command("config")
+def show_config() -> None:
+    """Affiche (et crée au besoin) la configuration pentbox."""
+    with _errors():
+        path = config.ensure_config()
+        cfg = config.load_config()
+    console.print(f"Config : [bold]{path}[/]")
+    table = Table("SECTION", "CLÉ", "VALEUR")
+    for section, values in cfg.items():
+        for key, value in values.items():
+            table.add_row(section, key, str(value))
+    console.print(table)
 
 
 @app.command()

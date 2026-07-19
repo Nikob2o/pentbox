@@ -1,0 +1,17 @@
+#!/bin/sh
+# pentbox — ouvre le shell de la mission, avec logging asciinema optionnel.
+# Piloté par la variable PENTBOX_LOG (1 = enregistrer, sinon non). Copié dans
+# chaque image (base-agnostique), appelé par `pentbox exec` en mode interactif.
+set -u
+
+SHELL_BIN="$(command -v zsh 2>/dev/null || command -v bash 2>/dev/null || command -v sh)"
+
+if [ "${PENTBOX_LOG:-1}" = "1" ] && command -v asciinema >/dev/null 2>&1; then
+    LOGDIR="/workspace/logs"
+    mkdir -p "$LOGDIR" 2>/dev/null || true
+    OUT="$LOGDIR/$(date +%Y%m%d-%H%M%S).cast"
+    printf 'pentbox: session enregistrée -> %s  (asciinema play <fichier> pour relire)\n' "$OUT"
+    asciinema rec -q -c "$SHELL_BIN" "$OUT"
+else
+    exec "$SHELL_BIN"
+fi
