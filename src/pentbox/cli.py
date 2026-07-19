@@ -12,6 +12,7 @@ from __future__ import annotations
 from contextlib import contextmanager
 
 import typer
+from docker.errors import DockerException
 from rich.console import Console
 from rich.table import Table
 
@@ -52,6 +53,10 @@ def _errors():
         yield
     except container.PentboxError as exc:
         console.print(f"[bold red]✗[/] {exc}")
+        raise typer.Exit(code=1)
+    except DockerException as exc:
+        # Filet de sécurité : aucune erreur Docker ne doit produire de traceback.
+        console.print(f"[bold red]✗[/] erreur Docker : {exc}")
         raise typer.Exit(code=1)
 
 

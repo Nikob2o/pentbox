@@ -20,7 +20,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import docker
-from docker.errors import DockerException, ImageNotFound, NotFound
+from docker.errors import APIError, DockerException, ImageNotFound, NotFound
 
 from pentbox import config
 
@@ -118,7 +118,16 @@ def pull_image(flavor: str) -> str:
     client = _client()
     image = resolve_image(flavor)
     repo, tag = _split_ref(image)
-    client.images.pull(repo, tag=tag)
+    try:
+        client.images.pull(repo, tag=tag)
+    except (ImageNotFound, NotFound):
+        raise PentboxError(
+            f"image « {image} » introuvable dans un registre — pas encore publiée "
+            "(le pull arrivera au lot 6).\n"
+            f"    construis-la en local : pentbox install {flavor} --build"
+        )
+    except APIError as exc:
+        raise PentboxError(f"échec du pull de « {image} » : {exc}") from exc
     return image
 
 
