@@ -10,6 +10,7 @@ d'outil — on manipule des conteneurs et des tags, jamais le contenu de l'image
 from __future__ import annotations
 
 from contextlib import contextmanager
+from typing import Optional
 
 import typer
 from docker.errors import DockerException
@@ -108,11 +109,33 @@ def update(
 def create(
     mission: str = typer.Argument(..., help="Nom de la mission / du conteneur."),
     image: str = typer.Option("debian", "--image", "-i", help="Saveur d'image."),
+    comment: str = typer.Option("", "--comment", "-c", help="Annotation libre de la mission."),
+    env: Optional[list[str]] = typer.Option(
+        None, "--env", "-e", help="Variable d'env KEY=VAL (répétable)."
+    ),
+    port: Optional[list[str]] = typer.Option(
+        None, "--port", "-p", help="Publier un port HOST:CONTAINER, proto optionnel (réseau bridge)."
+    ),
+    device: Optional[list[str]] = typer.Option(
+        None, "--device", help="Passthrough matériel /dev/… (répétable)."
+    ),
+    network: str = typer.Option("host", "--network", help="host (défaut) | bridge."),
+    x11: bool = typer.Option(False, "--x11", help="Partage l'affichage X11 (apps GUI)."),
     no_start: bool = typer.Option(False, "--no-start", help="Créer sans démarrer."),
 ) -> None:
     """Crée un conteneur pour une mission, avec son workspace persistant."""
     with _errors():
-        workspace = container.create_mission(mission, image, start=not no_start)
+        workspace = container.create_mission(
+            mission,
+            image,
+            start=not no_start,
+            comment=comment or None,
+            env=env,
+            ports=port,
+            devices=device,
+            network=network,
+            x11=x11,
+        )
     console.print(f"[green]✓[/] mission [bold]{mission}[/] créée (workspace : {workspace})")
     if not no_start:
         console.print(f"  → shell : [bold]pentbox exec {mission}[/]")
@@ -154,7 +177,7 @@ def list_missions() -> None:
         console.print("[dim]aucune mission — `pentbox create <nom>` pour commencer.[/]")
         return
     table = Table(title="Missions pentbox")
-    for col in ("MISSION", "SAVEUR", "ÉTAT", "IMAGE", "CRÉÉE"):
+    for col in ("MISSION", "SAVEUR", "ÉTAT", "IMAGE", "CRÉÉE", "COMMENT"):
         table.add_column(col)
     for r in rows:
         color = "green" if r["status"] == "running" else "yellow"
@@ -164,6 +187,7 @@ def list_missions() -> None:
             f"[{color}]{r['status']}[/]",
             r["image"],
             r["created"],
+            r["comment"] or "[dim]-[/]",
         )
     console.print(table)
 
@@ -176,7 +200,7 @@ def info(mission: str = typer.Argument(..., help="Mission à inspecter.")) -> No
     table = Table(show_header=False, title=f"Mission « {mission} »")
     for key in (
         "mission", "flavor", "status", "image", "network",
-        "workspace", "my_resources", "resources", "created", "container",
+        "workspace", "my_resources", "resources", "comment", "created", "container",
     ):
         table.add_row(f"[bold]{key}[/]", str(data[key]))
     console.print(table)

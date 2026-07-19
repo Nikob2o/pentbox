@@ -47,6 +47,7 @@ CONTAINER_PREFIX = "pentbox-"
 LABEL_MISSION = "pentbox.mission"
 LABEL_FLAVOR = "pentbox.flavor"
 LABEL_CREATED = "pentbox.created"
+LABEL_COMMENT = "pentbox.comment"
 
 WORKSPACE_MOUNT = "/workspace"          # propre à la mission (rw)
 MY_RESOURCES_MOUNT = "/opt/my-resources"  # partagé entre missions (rw)
@@ -109,6 +110,51 @@ def _get_container(client, mission: str):
         raise PentboxError(
             f"mission « {mission} » introuvable — `pentbox create {mission}` d'abord ?"
         )
+
+
+def _parse_env(env: list[str] | None) -> dict[str, str]:
+    result: dict[str, str] = {}
+    for item in env or []:
+        if "=" not in item:
+            raise PentboxError(f"variable d'env invalide « {item} » (attendu KEY=VALEUR).")
+        key, value = item.split("=", 1)
+        result[key] = value
+    return result
+
+
+def _parse_ports(ports: list[str]) -> dict[str, int]:
+    """« HOST:CONTAINER[/proto] » → format docker-py {'CONTAINER/proto': HOST}."""
+    mapping: dict[str, int] = {}
+    for spec in ports:
+        if ":" not in spec:
+            raise PentboxError(f"port invalide « {spec} » (attendu HOST:CONTAINER[/proto]).")
+        host_part, cont_part = spec.rsplit(":", 1)
+        proto = "tcp"
+        if "/" in cont_part:
+            cont_part, proto = cont_part.split("/", 1)
+        try:
+            mapping[f"{int(cont_part)}/{proto}"] = int(host_part)
+        except ValueError:
+            raise PentboxError(f"port invalide « {spec} » (numéros attendus).")
+    return mapping
+
+
+def _host_timezone() -> str | None:
+    """Devine la timezone de l'host (TZ, /etc/timezone, ou lien /etc/localtime)."""
+    tz = os.environ.get("TZ")
+    if tz:
+        return tz
+    etc_tz = Path("/etc/timezone")
+    if etc_tz.exists():
+        content = etc_tz.read_text(encoding="utf-8").strip()
+        if content:
+            return content
+    localtime = Path("/etc/localtime")
+    if localtime.is_symlink():
+        target = os.readlink(localtime)
+        if "zoneinfo/" in target:
+            return target.split("zoneinfo/", 1)[1]
+    return None
 
 
 # --------------------------------------------------------------------------- #
@@ -203,7 +249,18 @@ def ensure_shared_dirs() -> dict[str, str]:
 # Cycle de vie
 # --------------------------------------------------------------------------- #
 
-def create_mission(mission: str, flavor: str, *, start: bool = True) -> str:
+def create_mission(
+    mission: str,
+    flavor: str,
+    *,
+    start: bool = True,
+    comment: str | None = None,
+    env: list[str] | None = None,
+    ports: list[str] | None = None,
+    devices: list[str] | None = None,
+    network: str = "host",
+    x11: bool = False,
+) -> str:
     """Crée (et démarre) le conteneur d'une mission avec son workspace persistant."""
     client = _client()
     name = container_name(mission)
@@ -222,6 +279,12 @@ def create_mission(mission: str, flavor: str, *, start: bool = True) -> str:
             f"image « {image} » absente — lance d'abord `pentbox install {flavor}`."
         )
 
+    if ports and network == "host":
+        raise PentboxError(
+            "publier des ports est inutile en réseau host (tous les ports sont déjà "
+            "partagés) — ajoute `--network bridge`."
+        )
+
     workspace = config.WORKSPACES_DIR / mission
     workspace.mkdir(parents=True, exist_ok=True)
     ensure_shared_dirs()
@@ -231,22 +294,49 @@ def create_mission(mission: str, flavor: str, *, start: bool = True) -> str:
         LABEL_FLAVOR: flavor,
         LABEL_CREATED: datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }
+    if comment:
+        labels[LABEL_COMMENT] = comment
 
-    container = client.containers.create(
-        image,
+    volumes = {
+        str(workspace): {"bind": WORKSPACE_MOUNT, "mode": "rw"},
+        str(config.MY_RESOURCES_DIR): {"bind": MY_RESOURCES_MOUNT, "mode": "rw"},
+        str(config.RESOURCES_DIR): {"bind": RESOURCES_MOUNT, "mode": "ro"},
+    }
+    environment = _parse_env(env)
+
+    # Timezone du host, partagée par défaut.
+    tz = _host_timezone()
+    if tz:
+        environment.setdefault("TZ", tz)
+    if Path("/etc/localtime").exists():
+        volumes["/etc/localtime"] = {"bind": "/etc/localtime", "mode": "ro"}
+
+    # Partage X11 (GUI) optionnel.
+    if x11:
+        volumes["/tmp/.X11-unix"] = {"bind": "/tmp/.X11-unix", "mode": "rw"}
+        environment.setdefault("DISPLAY", os.environ.get("DISPLAY", ":0"))
+        xauth = os.environ.get("XAUTHORITY")
+        if xauth and Path(xauth).exists():
+            volumes[xauth] = {"bind": xauth, "mode": "ro"}
+            environment.setdefault("XAUTHORITY", xauth)
+
+    create_kwargs = dict(
         command=["sleep", "infinity"],  # garde le conteneur vivant pour `exec`
         name=name,
         labels=labels,
-        volumes={
-            str(workspace): {"bind": WORKSPACE_MOUNT, "mode": "rw"},
-            str(config.MY_RESOURCES_DIR): {"bind": MY_RESOURCES_MOUNT, "mode": "rw"},
-            str(config.RESOURCES_DIR): {"bind": RESOURCES_MOUNT, "mode": "ro"},
-        },
-        network_mode="host",  # indispensable pour le pentest (scans, Responder…)
+        volumes=volumes,
+        environment=environment,
+        network_mode=network,  # host (défaut, pentest) ou bridge (ports isolés)
         tty=True,
         stdin_open=True,
         detach=True,
     )
+    if devices:
+        create_kwargs["devices"] = devices
+    if ports:
+        create_kwargs["ports"] = _parse_ports(ports)
+
+    container = client.containers.create(image, **create_kwargs)
     if start:
         container.start()
     return str(workspace)
@@ -279,6 +369,7 @@ def list_missions() -> list[dict]:
                 "status": c.status,
                 "image": c.image.tags[0] if c.image.tags else c.image.short_id,
                 "created": c.labels.get(LABEL_CREATED, "?"),
+                "comment": c.labels.get(LABEL_COMMENT, ""),
             }
         )
     rows.sort(key=lambda r: r["mission"])
@@ -301,6 +392,7 @@ def mission_info(mission: str) -> dict:
         "workspace": mounts.get(WORKSPACE_MOUNT, "?"),
         "my_resources": mounts.get(MY_RESOURCES_MOUNT, "?"),
         "resources": mounts.get(RESOURCES_MOUNT, "?"),
+        "comment": container.labels.get(LABEL_COMMENT, ""),
         "container": container.name,
     }
 
