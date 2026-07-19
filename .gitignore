@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+
+# Outils
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+
+# Éditeurs / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Runtime pentbox (ne jamais versionner les données/images)
+*.log
+*.cast
