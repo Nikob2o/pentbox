@@ -175,6 +175,28 @@ def run_exec(
     raise typer.Exit(code=code)
 
 
+@app.command()
+def logs(
+    mission: str = typer.Argument(..., help="Mission dont on veut les enregistrements."),
+    play: bool = typer.Option(False, "--play", help="Rejouer le dernier enregistrement."),
+) -> None:
+    """Liste (ou rejoue avec --play) les sessions asciinema d'une mission."""
+    if play:
+        with _errors():
+            code = container.play_log(mission)
+        raise typer.Exit(code=code)
+    with _errors():
+        recs = container.list_logs(mission)
+    if not recs:
+        console.print(f"[dim]aucun enregistrement pour « {mission} ».[/]")
+        return
+    table = Table("ENREGISTREMENT", "TAILLE", title=f"Sessions — {mission}")
+    for r in recs:
+        table.add_row(r.name, f"{r.stat().st_size} o")
+    console.print(table)
+    console.print(f"[dim]rejouer le dernier : pentbox logs {mission} --play[/]")
+
+
 @app.command("list")
 def list_missions() -> None:
     """Liste les missions / conteneurs pentbox."""

@@ -449,3 +449,38 @@ def exec_mission(mission: str, command: str = "", *, log: bool = True) -> int:
             ["docker", "exec", "-w", WORKSPACE_MOUNT, interactive, name, "sh", "-c", _SHELL_PICKER]
         )
     return code
+
+
+# --------------------------------------------------------------------------- #
+# Enregistrements de session (asciinema)
+# --------------------------------------------------------------------------- #
+
+def list_logs(mission: str) -> list[Path]:
+    """Enregistrements .cast d'une mission (côté host), du plus ancien au récent."""
+    logdir = config.WORKSPACES_DIR / mission / "logs"
+    if not logdir.exists():
+        return []
+    return sorted(logdir.glob("*.cast"))
+
+
+def play_log(mission: str, cast: str | None = None) -> int:
+    """Rejoue un enregistrement via l'asciinema du conteneur (dernier par défaut)."""
+    logs = list_logs(mission)
+    if not logs:
+        raise PentboxError(f"aucun enregistrement pour la mission « {mission} ».")
+    if cast is None:
+        target = logs[-1]
+    else:
+        target = next((c for c in logs if c.name == cast), None)
+        if target is None:
+            raise PentboxError(f"enregistrement « {cast} » introuvable pour « {mission} ».")
+
+    container = _get_container(_client(), mission)
+    if container.status != "running":
+        raise PentboxError(
+            f"mission « {mission} » arrêtée — `pentbox start {mission}` d'abord."
+        )
+    return subprocess.call([
+        "docker", "exec", "-it", container_name(mission),
+        "asciinema", "play", f"{WORKSPACE_MOUNT}/logs/{target.name}",
+    ])

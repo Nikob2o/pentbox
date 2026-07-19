@@ -4,6 +4,14 @@
 # chaque image (base-agnostique), appelé par `pentbox exec` en mode interactif.
 set -u
 
+# Terminal : si le terminfo du $TERM hérité de l'host manque dans l'image
+# (ex. xterm-ghostty, foot, kitty…), l'édition de ligne (flèches / historique)
+# casse. On retombe alors sur xterm-256color, universellement supporté.
+if [ -z "${TERM:-}" ] || ! infocmp "$TERM" >/dev/null 2>&1; then
+    TERM=xterm-256color
+fi
+export TERM
+
 SHELL_BIN="$(command -v zsh 2>/dev/null || command -v bash 2>/dev/null || command -v sh)"
 
 if [ "${PENTBOX_LOG:-1}" = "1" ] && command -v asciinema >/dev/null 2>&1; then

@@ -22,7 +22,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
 # --- Base système + confort + arsenal 'core' (dépôts Debian) ---------------- #
 RUN apt-get update && apt-get install -y --no-install-recommends \
       ca-certificates curl wget gnupg git sudo \
-      zsh tmux vim less \
+      zsh tmux vim less ncurses-bin \
       iproute2 iputils-ping dnsutils whois netcat-openbsd socat \
       openssh-client \
       python3 python3-pip pipx asciinema \
