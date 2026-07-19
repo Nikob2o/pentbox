@@ -33,6 +33,7 @@ CONFIG_FILE: Path = CONFIG_DIR / "config.toml"
 _DEFAULT_CONFIG: dict = {
     "defaults": {"image": "debian"},
     "logging": {"enabled": True},
+    "registry": {"namespace": "", "tag": "latest"},
 }
 
 _DEFAULT_CONFIG_TOML = """\
@@ -43,6 +44,10 @@ image = "debian"      # saveur par défaut pour `create` (debian | blackarch)
 
 [logging]
 enabled = true        # enregistrer les shells interactifs en asciinema (.cast)
+
+[registry]
+namespace = ""        # ton user/orga Docker Hub (ex. "nikob") ; vide = build local seulement
+tag = "latest"        # tag à récupérer : latest (= core) ou "full" (arsenal complet)
 """
 
 
@@ -74,3 +79,8 @@ def ensure_config() -> Path:
         CONFIG_DIR.mkdir(parents=True, exist_ok=True)
         CONFIG_FILE.write_text(_DEFAULT_CONFIG_TOML, encoding="utf-8")
     return CONFIG_FILE
+
+
+def registry_namespace() -> str:
+    """User/orga Docker Hub configuré (vide si mode build local uniquement)."""
+    return str(load_config().get("registry", {}).get("namespace") or "").strip()

@@ -82,12 +82,17 @@ def install(
             )
             ref = container.build_image(image, profile)
             console.print(f"[green]✓[/] image construite : [bold]{ref}[/]")
-        else:
+        elif not config.registry_namespace():
             raise container.PentboxError(
-                "aucun registre configuré pour l'instant — construis l'image en local :\n"
+                "aucun registre configuré — construis l'image en local :\n"
                 f"    pentbox install {image} --build\n"
-                "  (le pull depuis Docker Hub arrivera au lot 6.)"
+                "  ou renseigne [registry].namespace (ton user Docker Hub) dans la config\n"
+                "  une fois l'image publiée par la CI (voir `pentbox config`)."
             )
+        else:
+            with console.status(f"Récupération de l'image « {image} »…"):
+                ref = container.pull_image(image)
+            console.print(f"[green]✓[/] image récupérée : [bold]{ref}[/]")
 
 
 @app.command()
@@ -96,6 +101,11 @@ def update(
 ) -> None:
     """Récupère la dernière version de l'image (pull)."""
     with _errors():
+        if not config.registry_namespace():
+            raise container.PentboxError(
+                "aucun registre configuré — rien à mettre à jour depuis un registre.\n"
+                f"  build local : pentbox install {image} --build"
+            )
         with console.status(f"Mise à jour de l'image « {image} »…"):
             ref = container.pull_image(image)
     console.print(f"[green]✓[/] image à jour : [bold]{ref}[/]")

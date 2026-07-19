@@ -26,13 +26,9 @@ from pentbox import config
 
 IMAGE_FLAVORS = ("debian", "blackarch")
 
-# Nos images custom (lot 2). Tags locaux tant qu'aucun registre n'est configuré ;
-# le lot 6 les repointera vers Docker Hub (ex. docker.io/<user>/pentbox-debian)
-# sans que le reste du code ne bouge.
-FLAVOR_IMAGES = {
-    "debian": "pentbox-debian:local",
-    "blackarch": "pentbox-blackarch:local",
-}
+# Dockerfiles par saveur. La *référence d'image* effective est calculée par
+# resolve_image() : image publiée sur un registre si registry.namespace est
+# configuré, sinon tag local construit via --build.
 FLAVOR_DOCKERFILE = {
     "debian": "debian.dockerfile",
     "blackarch": "blackarch.dockerfile",
@@ -88,11 +84,22 @@ def container_name(mission: str) -> str:
 
 
 def resolve_image(flavor: str) -> str:
-    if flavor not in FLAVOR_IMAGES:
+    """Référence d'image effective pour une saveur.
+
+    Si un registre est configuré (registry.namespace non vide), on vise l'image
+    publiée « <namespace>/pentbox-<flavor>:<tag> » (pull possible) ; sinon le tag
+    local « pentbox-<flavor>:local » (construit via `install --build`).
+    """
+    if flavor not in FLAVOR_DOCKERFILE:
         raise PentboxError(
-            f"saveur inconnue « {flavor} » (dispo : {', '.join(FLAVOR_IMAGES)})."
+            f"saveur inconnue « {flavor} » (dispo : {', '.join(FLAVOR_DOCKERFILE)})."
         )
-    return FLAVOR_IMAGES[flavor]
+    reg = config.load_config().get("registry", {})
+    namespace = str(reg.get("namespace") or "").strip()
+    if namespace:
+        tag = str(reg.get("tag") or "latest").strip()
+        return f"{namespace}/pentbox-{flavor}:{tag}"
+    return f"pentbox-{flavor}:local"
 
 
 def _split_ref(ref: str) -> tuple[str, str]:
@@ -175,9 +182,8 @@ def pull_image(flavor: str) -> str:
         client.images.pull(repo, tag=tag)
     except (ImageNotFound, NotFound):
         raise PentboxError(
-            f"image « {image} » introuvable dans un registre — pas encore publiée "
-            "(le pull arrivera au lot 6).\n"
-            f"    construis-la en local : pentbox install {flavor} --build"
+            f"image « {image} » introuvable dans le registre — publie-la via la CI "
+            f"(push GitHub) ou construis-la en local : pentbox install {flavor} --build"
         )
     except APIError as exc:
         raise PentboxError(f"échec du pull de « {image} » : {exc}") from exc
@@ -198,7 +204,7 @@ def build_image(flavor: str, profile: str = "core") -> str:
     dockerfile = IMAGES_DIR / FLAVOR_DOCKERFILE[flavor]
     if not dockerfile.exists():
         raise PentboxError(f"Dockerfile absent : {dockerfile} (saveur pas encore prête ?).")
-    tag = FLAVOR_IMAGES[flavor]
+    tag = resolve_image(flavor)  # même réf que create/pull (local ou registre)
     cmd = [
         "docker", "build",
         "-f", str(dockerfile),
