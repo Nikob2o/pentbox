@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=GetUserSPNs.py
+Comment=Kerberoasting (impacket)
+Exec=xfce4-terminal --title=GetUserSPNs.py -e "pentbox-run GetUserSPNs.py"
+Terminal=false
+Icon=utilities-terminal
+Categories=X-Pentbox-AD;

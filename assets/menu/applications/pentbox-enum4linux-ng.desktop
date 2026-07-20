@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=enum4linux-ng
+Comment=Énumération SMB / Windows
+Exec=xfce4-terminal --title=enum4linux-ng -e "pentbox-run enum4linux-ng"
+Terminal=false
+Icon=utilities-terminal
+Categories=X-Pentbox-Recon;

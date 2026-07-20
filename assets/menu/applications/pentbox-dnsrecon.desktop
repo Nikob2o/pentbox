@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=dnsrecon
+Comment=Énumération DNS
+Exec=xfce4-terminal --title=dnsrecon -e "pentbox-run dnsrecon"
+Terminal=false
+Icon=utilities-terminal
+Categories=X-Pentbox-Recon;

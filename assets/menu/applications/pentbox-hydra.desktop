@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=hydra
+Comment=Brute-force de services
+Exec=xfce4-terminal --title=hydra -e "pentbox-run hydra"
+Terminal=false
+Icon=utilities-terminal
+Categories=X-Pentbox-Pwd;

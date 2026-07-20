@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Shell pentbox
+Comment=Terminal pentbox (logging asciinema)
+Exec=xfce4-terminal --title=pentbox -e pentbox-shell
+Terminal=false
+Icon=utilities-terminal
+Categories=X-Pentbox-Misc;

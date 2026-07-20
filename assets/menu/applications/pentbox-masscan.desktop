@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=masscan
+Comment=Scan de ports massif
+Exec=xfce4-terminal --title=masscan -e "pentbox-run masscan"
+Terminal=false
+Icon=utilities-terminal
+Categories=X-Pentbox-Recon;

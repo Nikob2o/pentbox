@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=gobuster
+Comment=Brute-force répertoires / DNS / vhost
+Exec=xfce4-terminal --title=gobuster -e "pentbox-run gobuster"
+Terminal=false
+Icon=utilities-terminal
+Categories=X-Pentbox-Web;

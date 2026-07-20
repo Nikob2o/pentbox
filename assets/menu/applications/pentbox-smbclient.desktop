@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=smbclient
+Comment=Client SMB
+Exec=xfce4-terminal --title=smbclient -e "pentbox-run smbclient"
+Terminal=false
+Icon=utilities-terminal
+Categories=X-Pentbox-Recon;

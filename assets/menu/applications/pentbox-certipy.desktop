@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=certipy
+Comment=Abus de certificats ADCS
+Exec=xfce4-terminal --title=certipy -e "pentbox-run certipy"
+Terminal=false
+Icon=utilities-terminal
+Categories=X-Pentbox-AD;

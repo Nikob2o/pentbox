@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=medusa
+Comment=Brute-force de login
+Exec=xfce4-terminal --title=medusa -e "pentbox-run medusa"
+Terminal=false
+Icon=utilities-terminal
+Categories=X-Pentbox-Pwd;

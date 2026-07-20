@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=hashcat
+Comment=Cassage de hash (GPU/CPU)
+Exec=xfce4-terminal --title=hashcat -e "pentbox-run hashcat"
+Terminal=false
+Icon=utilities-terminal
+Categories=X-Pentbox-Pwd;

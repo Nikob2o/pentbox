@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=nxc
+Comment=NetExec — SMB/LDAP/WinRM/MSSQL
+Exec=xfce4-terminal --title=nxc -e "pentbox-run nxc"
+Terminal=false
+Icon=utilities-terminal
+Categories=X-Pentbox-AD;

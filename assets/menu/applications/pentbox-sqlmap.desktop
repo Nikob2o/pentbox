@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=sqlmap
+Comment=Injection SQL automatisée
+Exec=xfce4-terminal --title=sqlmap -e "pentbox-run sqlmap"
+Terminal=false
+Icon=utilities-terminal
+Categories=X-Pentbox-Web;

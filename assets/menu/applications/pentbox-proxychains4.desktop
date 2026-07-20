@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=proxychains4
+Comment=Chaînage de proxys
+Exec=xfce4-terminal --title=proxychains4 -e "pentbox-run proxychains4"
+Terminal=false
+Icon=utilities-terminal
+Categories=X-Pentbox-Misc;

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=tcpdump
+Comment=Capture réseau
+Exec=xfce4-terminal --title=tcpdump -e "pentbox-run tcpdump"
+Terminal=false
+Icon=utilities-terminal
+Categories=X-Pentbox-Misc;

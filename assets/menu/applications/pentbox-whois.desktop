@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=whois
+Comment=Lookup WHOIS
+Exec=xfce4-terminal --title=whois -e "pentbox-run whois"
+Terminal=false
+Icon=utilities-terminal
+Categories=X-Pentbox-Recon;

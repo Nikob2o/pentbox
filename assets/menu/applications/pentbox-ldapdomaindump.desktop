@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=ldapdomaindump
+Comment=Dump du domaine via LDAP
+Exec=xfce4-terminal --title=ldapdomaindump -e "pentbox-run ldapdomaindump"
+Terminal=false
+Icon=utilities-terminal
+Categories=X-Pentbox-AD;

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=dirb
+Comment=Brute-force de répertoires
+Exec=xfce4-terminal --title=dirb -e "pentbox-run dirb"
+Terminal=false
+Icon=utilities-terminal
+Categories=X-Pentbox-Web;

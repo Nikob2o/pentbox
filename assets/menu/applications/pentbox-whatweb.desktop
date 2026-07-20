@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=whatweb
+Comment=Fingerprinting web
+Exec=xfce4-terminal --title=whatweb -e "pentbox-run whatweb"
+Terminal=false
+Icon=utilities-terminal
+Categories=X-Pentbox-Web;

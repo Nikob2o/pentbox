@@ -1,0 +1,36 @@
+<!DOCTYPE Menu PUBLIC "-//freedesktop//DTD Menu 1.0//EN" "http://www.freedesktop.org/standards/menu-spec/1.0/menu.dtd">
+<!-- Fragment fusionné automatiquement dans le menu XFCE (DefaultMergeDirs). -->
+<Menu>
+  <Name>Xfce</Name>
+
+  <Menu>
+    <Name>Pentbox</Name>
+    <Directory>pentbox.directory</Directory>
+
+    <Menu>
+      <Name>Reconnaissance</Name>
+      <Directory>pentbox-recon.directory</Directory>
+      <Include><Category>X-Pentbox-Recon</Category></Include>
+    </Menu>
+    <Menu>
+      <Name>Web</Name>
+      <Directory>pentbox-web.directory</Directory>
+      <Include><Category>X-Pentbox-Web</Category></Include>
+    </Menu>
+    <Menu>
+      <Name>Active Directory</Name>
+      <Directory>pentbox-ad.directory</Directory>
+      <Include><Category>X-Pentbox-AD</Category></Include>
+    </Menu>
+    <Menu>
+      <Name>Mots de passe</Name>
+      <Directory>pentbox-pwd.directory</Directory>
+      <Include><Category>X-Pentbox-Pwd</Category></Include>
+    </Menu>
+    <Menu>
+      <Name>Divers</Name>
+      <Directory>pentbox-misc.directory</Directory>
+      <Include><Category>X-Pentbox-Misc</Category></Include>
+    </Menu>
+  </Menu>
+</Menu>

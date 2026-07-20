@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=snmpwalk
+Comment=Requêtes SNMP
+Exec=xfce4-terminal --title=snmpwalk -e "pentbox-run snmpwalk"
+Terminal=false
+Icon=utilities-terminal
+Categories=X-Pentbox-Recon;

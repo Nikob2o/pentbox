@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=wfuzz
+Comment=Fuzzing web
+Exec=xfce4-terminal --title=wfuzz -e "pentbox-run wfuzz"
+Terminal=false
+Icon=utilities-terminal
+Categories=X-Pentbox-Web;

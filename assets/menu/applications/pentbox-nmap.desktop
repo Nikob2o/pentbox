@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=nmap
+Comment=Scan de ports et services
+Exec=xfce4-terminal --title=nmap -e "pentbox-run nmap"
+Terminal=false
+Icon=utilities-terminal
+Categories=X-Pentbox-Recon;

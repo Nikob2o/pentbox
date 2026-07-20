@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=GetNPUsers.py
+Comment=AS-REP roasting (impacket)
+Exec=xfce4-terminal --title=GetNPUsers.py -e "pentbox-run GetNPUsers.py"
+Terminal=false
+Icon=utilities-terminal
+Categories=X-Pentbox-AD;

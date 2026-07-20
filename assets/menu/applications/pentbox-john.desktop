@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=john
+Comment=John the Ripper
+Exec=xfce4-terminal --title=john -e "pentbox-run john"
+Terminal=false
+Icon=utilities-terminal
+Categories=X-Pentbox-Pwd;

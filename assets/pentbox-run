@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# pentbox-run <outil> [args] : ouvre un outil dans un terminal — bannière,
+# aide (--help/-h, avec timeout anti-blocage), puis shell interactif prêt.
+# Utilisé par les entrées du menu Applications (fichiers .desktop).
+tool="$1"; shift
+
+printf '\033[1;36m┌─ pentbox · %s\033[0m\n\n' "$tool"
+if command -v "$tool" >/dev/null 2>&1; then
+    { timeout 6 "$tool" --help 2>&1 || timeout 6 "$tool" -h 2>&1 \
+        || echo "(pas d'aide auto — tape: $tool --help)"; } | head -n 40
+else
+    printf '\033[31moutil introuvable dans le PATH : %s\033[0m\n' "$tool"
+fi
+printf '\n\033[2m# tape ta commande (%s ...) — Ctrl-D pour fermer\033[0m\n' "$tool"
+exec "${SHELL:-/bin/bash}" -i
