@@ -1,0 +1,50 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0c1119"/><stop offset="1" stop-color="#080b10"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="42%" r="42%">
+      <stop offset="0" stop-color="#22d3ee" stop-opacity="0.11"/>
+      <stop offset="0.55" stop-color="#34d399" stop-opacity="0.045"/>
+      <stop offset="1" stop-color="#0c1119" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="acc" gradientUnits="userSpaceOnUse" x1="96" y1="96" x2="416" y2="416">
+      <stop offset="0" stop-color="#22d3ee"/><stop offset="1" stop-color="#34d399"/>
+    </linearGradient>
+    <linearGradient id="markbg" gradientUnits="userSpaceOnUse" x1="46" y1="46" x2="466" y2="466">
+      <stop offset="0" stop-color="#131a24"/><stop offset="1" stop-color="#0b0f14"/>
+    </linearGradient>
+    <linearGradient id="txt" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#22d3ee"/><stop offset="1" stop-color="#34d399"/>
+    </linearGradient>
+    <pattern id="dots" width="46" height="46" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1.5" fill="#1a2735"/>
+    </pattern>
+
+    <symbol id="mark" viewBox="0 0 512 512">
+      <rect x="46" y="46" width="420" height="420" rx="104" fill="url(#markbg)"/>
+      <rect x="46" y="46" width="420" height="420" rx="104" fill="none" stroke="url(#acc)" stroke-width="18"/>
+      <g fill="none" stroke="url(#acc)" stroke-width="26" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M150 196 V320"/><path d="M150 196 H184 C 216 196 216 256 184 256 H150"/>
+      </g>
+      <path d="M292 226 C 292 206 248 204 245 232 C 242 258 292 256 292 284 C 292 312 248 314 240 294"
+            fill="none" stroke="url(#acc)" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
+      <line x1="268" y1="190" x2="268" y2="330" stroke="url(#acc)" stroke-width="26" stroke-linecap="round"/>
+      <rect x="322" y="296" width="70" height="24" rx="12" fill="url(#acc)"/>
+    </symbol>
+  </defs>
+
+  <rect width="1920" height="1080" fill="url(#bg)"/>
+  <rect width="1920" height="1080" fill="url(#dots)" opacity="0.55"/>
+  <rect width="1920" height="1080" fill="url(#glow)"/>
+
+  <!-- Logo centré -->
+  <use href="#mark" x="810" y="300" width="300" height="300"/>
+
+  <!-- Wordmark -->
+  <text x="960" y="712" text-anchor="middle" font-family="'DejaVu Sans Mono','JetBrains Mono',monospace" font-weight="700" font-size="90" letter-spacing="-3">
+    <tspan fill="#e8eef4">pent</tspan><tspan fill="url(#txt)">box</tspan>
+  </text>
+  <!-- Tagline -->
+  <text x="960" y="766" text-anchor="middle" font-family="'DejaVu Sans Mono',monospace" font-size="27" letter-spacing="1" fill="#5f6f7e"># environnement de pentest conteneurisé</text>
+</svg>

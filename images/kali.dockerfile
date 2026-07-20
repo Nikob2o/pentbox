@@ -70,6 +70,7 @@ COPY assets/entrypoint.sh /usr/local/bin/pentbox-entrypoint
 COPY assets/pentbox-shell /usr/local/bin/pentbox-shell
 COPY assets/pentbox-desktop /usr/local/bin/pentbox-desktop
 COPY assets/history-templates /opt/pentbox/history-templates
+COPY assets/pentbox-wallpaper.png /opt/pentbox/wallpaper.png
 RUN chmod +x /usr/local/bin/pentbox-entrypoint /usr/local/bin/pentbox-shell /usr/local/bin/pentbox-desktop \
     && chown -R "$HOST_UID:$HOST_GID" /home/${USERNAME}
 
