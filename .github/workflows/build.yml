@@ -1,6 +1,6 @@
 name: build-and-push
 
-# Build de l'image pentbox « kali » et push sur Docker Hub.
+# Build des images pentbox (kali + blackarch) et push sur Docker Hub.
 # Tourne sur les machines de GitHub (pas besoin que ton PC soit allumé).
 #
 # Prérequis (repo GitHub → Settings → Secrets → Actions) :
@@ -22,6 +22,10 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false      # un échec d'une saveur ne bloque pas l'autre
+      matrix:
+        flavor: [kali, blackarch]
     steps:
       - uses: actions/checkout@v4
 
@@ -38,11 +42,11 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: images/kali.dockerfile
+          file: images/${{ matrix.flavor }}.dockerfile
           push: true
           build-args: |
             HOST_UID=1000
             HOST_GID=1000
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/pentbox-kali:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/pentbox-${{ matrix.flavor }}:latest
+          cache-from: type=gha,scope=${{ matrix.flavor }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.flavor }}

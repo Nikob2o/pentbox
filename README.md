@@ -3,7 +3,7 @@
 > Environnement de hacking conteneurisé, façon [Exegol](https://exegol.com) — mais **maison**, auto-hébergé et **sans paywall**.
 
 Un wrapper CLI **agnostique** qui pilote des images de pentest pré-construites
-(**kali** sur base Debian, arsenal façon Exegol ; **BlackArch** à venir) :
+(**kali** sur base Debian façon Exegol, **blackarch** sur base Arch) :
 conteneurs par mission, workspaces persistants, partage GUI, logging de session,
 etc. L'utilisateur **télécharge** l'image (`pull`) plutôt que de la builder ;
 les images sont reconstruites automatiquement en CI.
@@ -16,7 +16,8 @@ MVP fonctionnel : cycle de vie complet (create / start / exec / stop / list /
 info / rm), image **kali** custom (base Debian, arsenal façon Exegol : apt +
 pipx, user non-root), ressources partagées (my-resources + resources), options
 docker (env, x11, device, réseau/ports, comment), **logging asciinema**, config
-TOML, et **CI de publication**. Base **BlackArch** et desktop/VPN à venir.
+TOML, et **CI de publication**. Base **blackarch** dispo (arsenal pacman, netexec/
+impacket natifs) ; desktop/VPN à venir.
 
 ## Installation (dev, éditable)
 
