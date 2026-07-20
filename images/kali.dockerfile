@@ -54,6 +54,7 @@ RUN (git clone --depth 1 https://github.com/sullo/nikto /opt/nikto \
 # --- Bureau graphique (XFCE + VNC + noVNC), activé à la demande par --desktop  #
 RUN apt-get update && apt-get install -y --no-install-recommends \
       xfce4 xfce4-terminal tigervnc-standalone-server novnc websockify dbus-x11 xfonts-base \
+      firefox-esr \
     && rm -rf /var/lib/apt/lists/*
 
 # --- Utilisateur non-root (UID/GID alignés sur l'host) --------------------- #

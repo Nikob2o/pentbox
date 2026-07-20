@@ -31,7 +31,7 @@ RUN pacman -Sy --noconfirm --needed archlinux-keyring blackarch-keyring \
 # --- Bureau graphique (XFCE + VNC + noVNC), activé à la demande par --desktop  #
 RUN pacman -S --noconfirm --needed \
       xfwm4 xfdesktop xfce4-panel xfce4-terminal xfce4-session xfce4-settings \
-      tigervnc novnc dbus xorg-server xorg-xinit ttf-dejavu \
+      tigervnc novnc dbus xorg-server xorg-xinit ttf-dejavu firefox \
     && pacman -Scc --noconfirm
 
 # --- Utilisateur non-root (UID/GID alignés sur l'host) --------------------- #
