@@ -31,7 +31,7 @@ RUN pacman -Sy --noconfirm --needed archlinux-keyring blackarch-keyring \
 # --- Bureau graphique (XFCE + VNC + noVNC), activé à la demande par --desktop  #
 RUN pacman -S --noconfirm --needed \
       xfwm4 xfdesktop xfce4-panel xfce4-terminal xfce4-session xfce4-settings \
-      tigervnc novnc dbus xorg-server xorg-xinit ttf-dejavu firefox \
+      tigervnc novnc dbus xorg-server xorg-xinit ttf-dejavu firefox materia-gtk-theme \
     && pacman -Scc --noconfirm
 
 # --- Utilisateur non-root (UID/GID alignés sur l'host) --------------------- #
@@ -48,6 +48,7 @@ COPY assets/pentbox-shell /usr/local/bin/pentbox-shell
 COPY assets/pentbox-desktop /usr/local/bin/pentbox-desktop
 COPY assets/history-templates /opt/pentbox/history-templates
 COPY assets/pentbox-wallpaper.png /opt/pentbox/wallpaper.png
+COPY assets/pentbox-logo.png /opt/pentbox/logo.png
 COPY assets/pentbox-run /usr/local/bin/pentbox-run
 COPY assets/menu/applications/ /usr/share/applications/
 COPY assets/menu/desktop-directories/ /usr/share/desktop-directories/

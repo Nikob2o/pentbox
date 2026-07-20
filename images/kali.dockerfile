@@ -54,7 +54,7 @@ RUN (git clone --depth 1 https://github.com/sullo/nikto /opt/nikto \
 # --- Bureau graphique (XFCE + VNC + noVNC), activé à la demande par --desktop  #
 RUN apt-get update && apt-get install -y --no-install-recommends \
       xfce4 xfce4-terminal tigervnc-standalone-server novnc websockify dbus-x11 xfonts-base \
-      firefox-esr \
+      firefox-esr materia-gtk-theme \
     && rm -rf /var/lib/apt/lists/*
 
 # --- Utilisateur non-root (UID/GID alignés sur l'host) --------------------- #
@@ -71,6 +71,7 @@ COPY assets/pentbox-shell /usr/local/bin/pentbox-shell
 COPY assets/pentbox-desktop /usr/local/bin/pentbox-desktop
 COPY assets/history-templates /opt/pentbox/history-templates
 COPY assets/pentbox-wallpaper.png /opt/pentbox/wallpaper.png
+COPY assets/pentbox-logo.png /opt/pentbox/logo.png
 COPY assets/pentbox-run /usr/local/bin/pentbox-run
 COPY assets/menu/applications/ /usr/share/applications/
 COPY assets/menu/desktop-directories/ /usr/share/desktop-directories/

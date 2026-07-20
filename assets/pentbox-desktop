@@ -49,6 +49,25 @@ if [ -f /opt/pentbox/wallpaper.png ]; then
         for p in $(xfconf-query -c xfce4-desktop -l 2>/dev/null | grep 'image-style$'); do
             xfconf-query -c xfce4-desktop -p "$p" -s 5 2>/dev/null   # 5 = zoomed
         done
+
+        # Thème sombre Materia (au runtime, en plus du XML baké).
+        xfconf-query -c xsettings -p /Net/ThemeName -s Materia-dark 2>/dev/null \
+            || xfconf-query -c xsettings -p /Net/ThemeName -n -t string -s Materia-dark 2>/dev/null
+        xfconf-query -c xfwm4 -p /general/theme -s Materia-dark 2>/dev/null \
+            || xfconf-query -c xfwm4 -p /general/theme -n -t string -s Materia-dark 2>/dev/null
+
+        # Logo pentbox comme icône du menu Applications (à la place du logo XFCE).
+        if [ -f /opt/pentbox/logo.png ]; then
+            changed=0
+            for pl in $(xfconf-query -c xfce4-panel -l 2>/dev/null | grep -E '/plugins/plugin-[0-9]+$'); do
+                if [ "$(xfconf-query -c xfce4-panel -p "$pl" 2>/dev/null)" = "applicationsmenu" ]; then
+                    xfconf-query -c xfce4-panel -p "$pl/button-icon" -n -t string -s /opt/pentbox/logo.png 2>/dev/null
+                    xfconf-query -c xfce4-panel -p "$pl/show-button-title" -n -t bool -s false 2>/dev/null
+                    changed=1
+                fi
+            done
+            [ "$changed" = 1 ] && xfce4-panel --restart >/dev/null 2>&1 || true
+        fi
     ) &
 fi
 
