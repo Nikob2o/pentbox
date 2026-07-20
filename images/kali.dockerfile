@@ -74,7 +74,6 @@ COPY assets/pentbox-wallpaper.png /opt/pentbox/wallpaper.png
 COPY assets/pentbox-run /usr/local/bin/pentbox-run
 COPY assets/menu/applications/ /usr/share/applications/
 COPY assets/menu/desktop-directories/ /usr/share/desktop-directories/
-COPY assets/menu/xfce-applications-merged/ /etc/xdg/menus/xfce-applications-merged/
 RUN chmod +x /usr/local/bin/pentbox-entrypoint /usr/local/bin/pentbox-shell /usr/local/bin/pentbox-desktop /usr/local/bin/pentbox-run \
     && chown -R "$HOST_UID:$HOST_GID" /home/${USERNAME}
 

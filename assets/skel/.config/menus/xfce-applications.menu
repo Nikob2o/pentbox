@@ -1,7 +1,9 @@
 <!DOCTYPE Menu PUBLIC "-//freedesktop//DTD Menu 1.0//EN" "http://www.freedesktop.org/standards/menu-spec/1.0/menu.dtd">
-<!-- Fragment fusionné automatiquement dans le menu XFCE (DefaultMergeDirs). -->
+<!-- Override utilisateur : reprend le menu XFCE système (MergeFile parent) et
+     ajoute le menu "Pentbox" avec ses catégories d'outils. -->
 <Menu>
   <Name>Xfce</Name>
+  <MergeFile type="parent">xfce-applications.menu</MergeFile>
 
   <Menu>
     <Name>Pentbox</Name>
