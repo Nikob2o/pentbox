@@ -30,13 +30,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # --- Arsenal Python (pipx, à l'échelle système via PIPX_BIN_DIR) ----------- #
 # Résilient façon Exegol : un outil qui échoue n'interrompt pas le build.
-# TODO(NetExec) : sa dépendance Rust ne compile pas avec le rustc de bookworm ;
-#   à réintégrer proprement plus tard (rustup + purge, pour éviter le +4 Go).
 RUN for pkg in \
       impacket certipy-ad mitm6 ldapdomaindump coercer \
       "git+https://github.com/cddmp/enum4linux-ng" name-that-hash hashid updog; do \
       pipx install "$pkg" || echo "WARN: pipx install $pkg a échoué"; \
     done && rm -rf /root/.cache
+
+# --- NetExec (dépendance Rust récente) ------------------------------------- #
+# rustup temporaire, build, puis purge dans le MÊME layer → le toolchain Rust
+# ne reste pas dans l'image (l'extension est déjà compilée dans le venv).
+RUN curl -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain stable \
+    && . "$HOME/.cargo/env" \
+    && (pipx install "git+https://github.com/Pennyw0rth/NetExec" \
+        || echo "WARN: pipx install NetExec a échoué") \
+    && rustup self uninstall -y \
+    && rm -rf "$HOME/.cargo" "$HOME/.rustup" /root/.cache
 
 # --- Outils git non packagés ----------------------------------------------- #
 RUN (git clone --depth 1 https://github.com/sullo/nikto /opt/nikto \
