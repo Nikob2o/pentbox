@@ -231,9 +231,56 @@ def list_missions() -> None:
     console.print(table)
 
 
+def _human_size(n: int) -> str:
+    size = float(n)
+    for unit in ("o", "Ko", "Mo", "Go", "To"):
+        if size < 1024:
+            return f"{size:.0f} {unit}" if unit == "o" else f"{size:.1f} {unit}"
+        size /= 1024
+    return f"{size:.1f} To"
+
+
+def _show_images() -> None:
+    """Catalogue : images Docker Hub + état local (vert si déjà pull, avec version)."""
+    with _errors():
+        data = container.list_images()
+    ns = data["namespace"]
+    title = (
+        f"Images pentbox — namespace : {ns}"
+        if ns else "Images pentbox — local (aucun registre configuré)"
+    )
+    table = Table("SAVEUR", "TAG", "PUSH (Docker Hub)", "TAILLE", "LOCAL (version)", title=title)
+    for fl in data["flavors"]:
+        if not fl["rows"]:
+            note = "aucune image publiée" if fl["hub_ok"] else "registre injoignable / non publié"
+            table.add_row(fl["flavor"], f"[dim]{note}[/]", "", "", "")
+            continue
+        first = True
+        for r in fl["rows"]:
+            local = r["local"]
+            tag = f"[green]{r['tag']}[/]" if local else r["tag"]
+            pushed = r["pushed"] or "[dim]—[/]"
+            size = _human_size(r["size"]) if r["size"] else "[dim]—[/]"
+            local_cell = (
+                f"[green]✓ {local['created']} ({local['id']})[/]" if local else "[dim]—[/]"
+            )
+            table.add_row(fl["flavor"] if first else "", tag, pushed, size, local_cell)
+            first = False
+    console.print(table)
+    if not ns:
+        console.print("[dim]Renseigne [registry].namespace pour voir les images Docker Hub.[/]")
+
+
 @app.command()
-def info(mission: str = typer.Argument(..., help="Mission à inspecter.")) -> None:
-    """Affiche les métadonnées d'une mission."""
+def info(
+    mission: Optional[str] = typer.Argument(
+        None, help="Mission à inspecter (vide = catalogue des images)."
+    ),
+) -> None:
+    """Détaille une mission — ou, sans argument, liste les images disponibles."""
+    if mission is None:
+        _show_images()
+        return
     with _errors():
         data = container.mission_info(mission)
     table = Table(show_header=False, title=f"Mission « {mission} »")

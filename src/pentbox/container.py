@@ -13,9 +13,12 @@ seule source de vérité sur l'état des missions — pas de fichier d'état par
 
 from __future__ import annotations
 
+import json
 import os
 import subprocess
 import sys
+import urllib.error
+import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -23,6 +26,9 @@ import docker
 from docker.errors import APIError, DockerException, ImageNotFound, NotFound
 
 from pentbox import config
+
+# Ordre d'affichage des tags dans le catalogue (nommés d'abord, puis datés).
+_TAG_PRIORITY = {"latest": 0, "core": 1, "full": 2}
 
 IMAGE_FLAVORS = ("debian", "blackarch")
 
@@ -217,6 +223,98 @@ def build_image(flavor: str, profile: str = "core") -> str:
     if subprocess.call(cmd) != 0:
         raise PentboxError("le build a échoué (voir la sortie docker ci-dessus).")
     return tag
+
+
+# --------------------------------------------------------------------------- #
+# Catalogue d'images (Docker Hub + état local)
+# --------------------------------------------------------------------------- #
+
+def _hub_tags(repo: str) -> list[dict] | None:
+    """Tags publiés d'un repo Docker Hub public. None si injoignable/inexistant."""
+    url = f"https://hub.docker.com/v2/repositories/{repo}/tags/?page_size=100"
+    try:
+        with urllib.request.urlopen(url, timeout=10) as resp:  # noqa: S310 (host fixe)
+            data = json.loads(resp.read().decode())
+    except urllib.error.HTTPError as exc:
+        return [] if exc.code == 404 else None  # 404 = repo pas encore publié
+    except (urllib.error.URLError, OSError, ValueError):
+        return None
+    tags = [
+        {
+            "name": r.get("name", "?"),
+            "pushed": (r.get("last_updated") or "")[:10],
+            "size": r.get("full_size") or 0,
+        }
+        for r in data.get("results", [])
+    ]
+    named = sorted(
+        (t for t in tags if t["name"] in _TAG_PRIORITY),
+        key=lambda t: _TAG_PRIORITY[t["name"]],
+    )
+    dated = sorted(
+        (t for t in tags if t["name"] not in _TAG_PRIORITY),
+        key=lambda t: t["name"],
+        reverse=True,
+    )
+    return named + dated
+
+
+def _local_image(client, ref: str) -> dict | None:
+    """Infos de l'image locale (version téléchargée) ou None si absente."""
+    try:
+        img = client.images.get(ref)
+    except (ImageNotFound, NotFound):
+        return None
+    return {
+        "created": (img.attrs.get("Created") or "")[:10],
+        "id": img.short_id.replace("sha256:", ""),
+    }
+
+
+def list_images() -> dict:
+    """Catalogue : tags Docker Hub (si registre configuré) + présence locale.
+
+    Retourne {namespace, flavors:[{flavor, repo, hub_ok, rows:[{tag, pushed,
+    size, local}]}]}. `local` est None si l'image n'est pas pull, sinon
+    {created, id} (= la version téléchargée).
+    """
+    client = _client()
+    namespace = str(config.load_config().get("registry", {}).get("namespace") or "").strip()
+    flavors = []
+    for flavor in FLAVOR_DOCKERFILE:
+        if namespace:
+            repo = f"{namespace}/pentbox-{flavor}"
+            hub = _hub_tags(repo)
+        else:
+            repo = f"pentbox-{flavor}"
+            hub = None
+
+        rows = []
+        if hub:
+            for t in hub:
+                rows.append({
+                    "tag": t["name"],
+                    "pushed": t["pushed"],
+                    "size": t["size"],
+                    "local": _local_image(client, f"{repo}:{t['name']}"),
+                })
+        else:
+            # Pas de registre (ou injoignable) : on montre ce qui est en local.
+            candidates = (
+                [f"{repo}:latest", f"{repo}:core", f"{repo}:full"]
+                if namespace else [f"{repo}:local"]
+            )
+            for ref in candidates:
+                loc = _local_image(client, ref)
+                if loc:
+                    rows.append({
+                        "tag": ref.rsplit(":", 1)[1],
+                        "pushed": None,
+                        "size": None,
+                        "local": loc,
+                    })
+        flavors.append({"flavor": flavor, "repo": repo, "hub_ok": hub is not None, "rows": rows})
+    return {"namespace": namespace, "flavors": flavors}
 
 
 # --------------------------------------------------------------------------- #
