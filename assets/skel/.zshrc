@@ -32,3 +32,8 @@ alias la='ls -A --color=auto'
 alias l='ls -CF --color=auto'
 
 export EDITOR=vim
+
+# Personnalisation utilisateur — appliquée À CHAUD depuis my-resources (partagé
+# entre toutes les missions), sans rebuild. Édite côté host :
+#   ~/.local/share/pentbox/my-resources/zsh/zshrc
+[[ -f /opt/my-resources/zsh/zshrc ]] && source /opt/my-resources/zsh/zshrc

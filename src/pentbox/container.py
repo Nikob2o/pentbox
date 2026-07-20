@@ -328,7 +328,10 @@ _SHARED_READMES = {
         f"et monté en lecture/écriture sur `{MY_RESOURCES_MOUNT}` dans chaque "
         "conteneur.\n\n"
         "Mets-y tes scripts, configs, notes, outils perso : ils persistent et "
-        "sont dispo partout.\n",
+        "sont dispo partout.\n\n"
+        "Personnalisation shell **à chaud** (sans rebuild ni recréation) :\n"
+        "- `zsh/zshrc` → sourcé à la fin du zsh de chaque mission\n"
+        "- `tmux/tmux.conf` → chargé à la fin du tmux de chaque mission\n",
     ),
     "resources": (
         config.RESOURCES_DIR,
@@ -341,8 +344,28 @@ _SHARED_READMES = {
 }
 
 
+# Gabarits de personnalisation shell (posés dans my-resources, sourcés à chaud
+# par les dotfiles de l'image → réglages perso sans rebuild).
+_MY_RESOURCES_TEMPLATES = {
+    "zsh/zshrc": (
+        "# pentbox — personnalisation zsh appliquée À CHAUD dans toutes les\n"
+        "# missions (sourcée à la fin du .zshrc de l'image). Aucun rebuild :\n"
+        "# édite ce fichier, ouvre un nouveau shell.\n"
+        "#\n"
+        "# alias ll='ls -lah'\n"
+        "# export HTTP_PROXY=http://127.0.0.1:8080\n"
+    ),
+    "tmux/tmux.conf": (
+        "# pentbox — personnalisation tmux appliquée à chaud dans toutes les\n"
+        "# missions (source-file à la fin du tmux.conf de l'image).\n"
+        "#\n"
+        "# set -g status-style bg=blue\n"
+    ),
+}
+
+
 def ensure_shared_dirs() -> dict[str, str]:
-    """Crée les dossiers partagés (+ un README au 1er passage). Retourne leurs chemins."""
+    """Crée les dossiers partagés (+ README et gabarits au 1er passage)."""
     paths: dict[str, str] = {}
     for key, (path, readme) in _SHARED_READMES.items():
         path.mkdir(parents=True, exist_ok=True)
@@ -350,6 +373,12 @@ def ensure_shared_dirs() -> dict[str, str]:
         if not marker.exists():
             marker.write_text(readme, encoding="utf-8")
         paths[key] = str(path)
+    # Gabarits de perso shell à chaud, dans my-resources.
+    for rel, content in _MY_RESOURCES_TEMPLATES.items():
+        target = config.MY_RESOURCES_DIR / rel
+        if not target.exists():
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(content, encoding="utf-8")
     return paths
 
 
