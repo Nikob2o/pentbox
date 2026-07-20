@@ -3,19 +3,20 @@
 > Environnement de hacking conteneurisé, façon [Exegol](https://exegol.com) — mais **maison**, auto-hébergé et **sans paywall**.
 
 Un wrapper CLI **agnostique** qui pilote des images de pentest pré-construites
-(bases **Debian** / **BlackArch**) : conteneurs par mission, workspaces persistants,
-partage GUI, logging de session, etc. L'utilisateur **télécharge** l'image (`pull`)
-plutôt que de la builder ; les images sont reconstruites automatiquement en CI.
+(**kali** sur base Debian, arsenal façon Exegol ; **BlackArch** à venir) :
+conteneurs par mission, workspaces persistants, partage GUI, logging de session,
+etc. L'utilisateur **télécharge** l'image (`pull`) plutôt que de la builder ;
+les images sont reconstruites automatiquement en CI.
 
 📄 Conception détaillée : [`FAISABILITE.md`](./FAISABILITE.md)
 
 ## Statut
 
 MVP fonctionnel : cycle de vie complet (create / start / exec / stop / list /
-info / rm), image **Debian** custom (user non-root), ressources partagées
-(my-resources + resources), options docker (env, x11, device, réseau/ports,
-comment), **logging asciinema**, config TOML, et **CI de publication**. Base
-**BlackArch** et desktop/VPN à venir.
+info / rm), image **kali** custom (base Debian, arsenal façon Exegol : apt +
+pipx, user non-root), ressources partagées (my-resources + resources), options
+docker (env, x11, device, réseau/ports, comment), **logging asciinema**, config
+TOML, et **CI de publication**. Base **BlackArch** et desktop/VPN à venir.
 
 ## Installation (dev, éditable)
 
@@ -27,7 +28,7 @@ pentbox --help
 ## Usage rapide
 
 ```bash
-pentbox install debian --build   # build local (ou pull si un registre est configuré)
+pentbox install kali --build     # build local (ou pull si un registre est configuré)
 pentbox create mission1          # crée + démarre une mission (workspace persistant)
 pentbox exec mission1            # shell interactif (enregistré en asciinema)
 pentbox list                     # missions actives
@@ -43,7 +44,7 @@ src/pentbox/      # le wrapper (CLI Typer + pilotage Docker SDK)
   container.py    #   cycle de vie des conteneurs (lot 1)
   config.py       #   chemins XDG / config
 assets/           # config partagée, copiée dans chaque image (UX commune)
-images/           # Dockerfiles par saveur (debian, blackarch)
+images/           # Dockerfiles par saveur (kali, blackarch)
 ```
 
 ## Publication / CI
@@ -63,12 +64,11 @@ demande. Le build tourne sur les runners GitHub — ton PC n'a pas à être allu
    ```toml
    [registry]
    namespace = "ton-user-dockerhub"
-   tag = "latest"     # ou "full" pour l'arsenal complet
+   tag = "latest"
    ```
 
-Ensuite `pentbox install debian` (sans `--build`) et `pentbox update` **pull**
-l'image depuis Docker Hub. Tags publiés : `:core` (= `:latest`, fiable),
-`:full` (arsenal Kali), plus des tags datés.
+Ensuite `pentbox install kali` (sans `--build`) et `pentbox update` **pull**
+l'image `pentbox-kali:latest` depuis Docker Hub.
 
 ## Licence
 

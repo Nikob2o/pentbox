@@ -1,12 +1,12 @@
 name: build-and-push
 
-# Build des images pentbox et push sur Docker Hub.
+# Build de l'image pentbox « kali » et push sur Docker Hub.
 # Tourne sur les machines de GitHub (pas besoin que ton PC soit allumé).
 #
-# Prérequis (à configurer dans le repo GitHub → Settings → Secrets → Actions) :
+# Prérequis (repo GitHub → Settings → Secrets → Actions) :
 #   - secret DOCKERHUB_USERNAME : ton user Docker Hub
-#   - secret DOCKERHUB_TOKEN    : un token d'accès Docker Hub (Account → Security)
-# Puis, côté client, renseigne [registry].namespace dans ~/.config/pentbox/config.toml.
+#   - secret DOCKERHUB_TOKEN    : un token d'accès Docker Hub (Read & Write)
+# Côté client : renseigne [registry].namespace dans ~/.config/pentbox/config.toml.
 
 on:
   push:
@@ -22,16 +22,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false      # un échec du profil 'full' ne bloque pas 'core'
-      matrix:
-        include:
-          - flavor: debian
-            profile: core
-            latest: true     # core -> aussi taggé :latest (défaut fiable)
-          - flavor: debian
-            profile: full
-            latest: false    # arsenal complet, taggé :full
     steps:
       - uses: actions/checkout@v4
 
@@ -44,30 +34,15 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Compute tags
-        id: tags
-        run: |
-          IMG="${{ secrets.DOCKERHUB_USERNAME }}/pentbox-${{ matrix.flavor }}"
-          D="$(date +%Y%m%d)"
-          {
-            echo "list<<EOF"
-            echo "$IMG:${{ matrix.profile }}"
-            echo "$IMG:${{ matrix.profile }}-$D"
-            if [ "${{ matrix.latest }}" = "true" ]; then echo "$IMG:latest"; fi
-            echo "EOF"
-          } >> "$GITHUB_OUTPUT"
-
       - name: Build and push
         uses: docker/build-push-action@v6
-        continue-on-error: ${{ matrix.profile == 'full' }}
         with:
           context: .
-          file: images/${{ matrix.flavor }}.dockerfile
+          file: images/kali.dockerfile
           push: true
           build-args: |
-            PROFILE=${{ matrix.profile }}
             HOST_UID=1000
             HOST_GID=1000
-          tags: ${{ steps.tags.outputs.list }}
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/pentbox-kali:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max

@@ -31,7 +31,7 @@ CONFIG_FILE: Path = CONFIG_DIR / "config.toml"
 
 # Valeurs par défaut, surchargées par le fichier config.toml s'il existe.
 _DEFAULT_CONFIG: dict = {
-    "defaults": {"image": "debian"},
+    "defaults": {"image": "kali"},
     "logging": {"enabled": True},
     "registry": {"namespace": "", "tag": "latest"},
 }
@@ -40,7 +40,7 @@ _DEFAULT_CONFIG_TOML = """\
 # Configuration pentbox.
 
 [defaults]
-image = "debian"      # saveur par défaut pour `create` (debian | blackarch)
+image = "kali"        # saveur par défaut pour `create` (kali | blackarch)
 
 [logging]
 enabled = true        # enregistrer les shells interactifs en asciinema (.cast)

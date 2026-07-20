@@ -67,20 +67,17 @@ def _errors():
 
 @app.command()
 def install(
-    image: str = typer.Argument("debian", help="Saveur d'image : debian | blackarch."),
+    image: str = typer.Argument("kali", help="Saveur d'image : kali | blackarch."),
     build: bool = typer.Option(False, "--build", help="Builder l'image en local."),
-    profile: str = typer.Option(
-        "core", "--profile", help="core (léger) | full (arsenal Kali, lourd → CI)."
-    ),
 ) -> None:
     """Récupère (pull) ou build une image pentbox."""
     with _errors():
         if build:
             console.print(
-                f"[cyan]Build de l'image « {image} » (profil {profile})…[/] "
-                "cela peut être long."
+                f"[cyan]Build de l'image « {image} »…[/] cela peut être long "
+                "(arsenal apt + pipx)."
             )
-            ref = container.build_image(image, profile)
+            ref = container.build_image(image)
             console.print(f"[green]✓[/] image construite : [bold]{ref}[/]")
         elif not config.registry_namespace():
             raise container.PentboxError(
@@ -97,7 +94,7 @@ def install(
 
 @app.command()
 def update(
-    image: str = typer.Argument("debian", help="Saveur d'image à mettre à jour."),
+    image: str = typer.Argument("kali", help="Saveur d'image à mettre à jour."),
 ) -> None:
     """Récupère la dernière version de l'image (pull)."""
     with _errors():

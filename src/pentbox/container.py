@@ -30,13 +30,13 @@ from pentbox import config
 # Ordre d'affichage des tags dans le catalogue (nommés d'abord, puis datés).
 _TAG_PRIORITY = {"latest": 0, "core": 1, "full": 2}
 
-IMAGE_FLAVORS = ("debian", "blackarch")
+IMAGE_FLAVORS = ("kali", "blackarch")
 
 # Dockerfiles par saveur. La *référence d'image* effective est calculée par
 # resolve_image() : image publiée sur un registre si registry.namespace est
 # configuré, sinon tag local construit via --build.
 FLAVOR_DOCKERFILE = {
-    "debian": "debian.dockerfile",
+    "kali": "kali.dockerfile",
     "blackarch": "blackarch.dockerfile",
 }
 
@@ -196,7 +196,7 @@ def pull_image(flavor: str) -> str:
     return image
 
 
-def build_image(flavor: str, profile: str = "core") -> str:
+def build_image(flavor: str) -> str:
     """Build l'image custom depuis images/<flavor>.dockerfile. Retourne le tag.
 
     Délégué à `docker build` (streaming + BuildKit). Contexte = racine du repo
@@ -215,7 +215,6 @@ def build_image(flavor: str, profile: str = "core") -> str:
         "docker", "build",
         "-f", str(dockerfile),
         "-t", tag,
-        "--build-arg", f"PROFILE={profile}",
         "--build-arg", f"HOST_UID={os.getuid()}",
         "--build-arg", f"HOST_GID={os.getgid()}",
         str(PROJECT_ROOT),
