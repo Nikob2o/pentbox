@@ -37,3 +37,18 @@ export EDITOR=vim
 # entre toutes les missions), sans rebuild. Édite côté host :
 #   ~/.local/share/pentbox/my-resources/zsh/zshrc
 [[ -f /opt/my-resources/zsh/zshrc ]] && source /opt/my-resources/zsh/zshrc
+
+# Templates de commandes chargés dans l'historique (↑ / Ctrl-R) : défauts bakés
+# + tes modèles perso dans my-resources/history (à chaud). Lignes vides/# ignorées.
+_pentbox_load_templates() {
+  local f tmp
+  for f in /opt/pentbox/history-templates /opt/my-resources/history; do
+    [[ -r $f ]] || continue
+    tmp=$(mktemp) || continue
+    grep -vE '^[[:space:]]*(#|$)' "$f" > "$tmp" 2>/dev/null
+    fc -R "$tmp"
+    rm -f "$tmp"
+  done
+}
+_pentbox_load_templates
+unfunction _pentbox_load_templates 2>/dev/null

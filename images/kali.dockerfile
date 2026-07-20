@@ -62,6 +62,7 @@ RUN groupadd -g "$HOST_GID" "$USERNAME" \
 COPY assets/skel/ /home/${USERNAME}/
 COPY assets/entrypoint.sh /usr/local/bin/pentbox-entrypoint
 COPY assets/pentbox-shell /usr/local/bin/pentbox-shell
+COPY assets/history-templates /opt/pentbox/history-templates
 RUN chmod +x /usr/local/bin/pentbox-entrypoint /usr/local/bin/pentbox-shell \
     && chown -R "$HOST_UID:$HOST_GID" /home/${USERNAME}
 

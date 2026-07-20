@@ -331,7 +331,8 @@ _SHARED_READMES = {
         "sont dispo partout.\n\n"
         "Personnalisation shell **à chaud** (sans rebuild ni recréation) :\n"
         "- `zsh/zshrc` → sourcé à la fin du zsh de chaque mission\n"
-        "- `tmux/tmux.conf` → chargé à la fin du tmux de chaque mission\n",
+        "- `tmux/tmux.conf` → chargé à la fin du tmux de chaque mission\n"
+        "- `history` → tes commandes-templates (↑ / Ctrl-R), en plus des défauts\n",
     ),
     "resources": (
         config.RESOURCES_DIR,
@@ -360,6 +361,13 @@ _MY_RESOURCES_TEMPLATES = {
         "# missions (source-file à la fin du tmux.conf de l'image).\n"
         "#\n"
         "# set -g status-style bg=blue\n"
+    ),
+    "history": (
+        "# pentbox — TES commandes-templates perso, chargées dans l'historique\n"
+        "# (↑ / Ctrl-R) de toutes les missions, à chaud. Une commande par ligne ;\n"
+        "# lignes vides et # ignorées. Les défauts sont déjà fournis par l'image.\n"
+        "#\n"
+        "# nxc smb TARGET -u USER -p PASS -M spider_plus\n"
     ),
 }
 

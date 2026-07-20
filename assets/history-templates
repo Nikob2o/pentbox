@@ -1,0 +1,41 @@
+# pentbox — templates de commandes chargés dans l'historique du shell.
+# Rappelle-les avec ↑ ou Ctrl-R, puis remplace les placeholders :
+#   TARGET DOMAIN DC_IP USER PASS WORDLIST
+# (les lignes vides et commentées sont ignorées au chargement)
+
+# --- Recon réseau ---
+nmap -sVC -oA nmap/initial TARGET
+nmap -p- --min-rate 5000 -oA nmap/allports TARGET
+nmap -sU --top-ports 50 -oA nmap/udp TARGET
+masscan -p1-65535 --rate 10000 TARGET
+
+# --- Web ---
+gobuster dir -u http://TARGET -w WORDLIST -t 50 -o gobuster.txt
+whatweb http://TARGET
+nikto -h http://TARGET
+sqlmap -u 'http://TARGET/?id=1' --batch --dbs
+
+# --- SMB / énumération ---
+nxc smb TARGET -u USER -p PASS
+nxc smb TARGET -u USER -p PASS --shares
+nxc smb TARGET -u USER -p PASS --users
+smbclient -L //TARGET -U USER
+enum4linux-ng -A TARGET
+
+# --- Active Directory (impacket) ---
+GetNPUsers.py DOMAIN/ -usersfile users.txt -no-pass -dc-ip DC_IP
+GetUserSPNs.py DOMAIN/USER:PASS -dc-ip DC_IP -request
+secretsdump.py DOMAIN/USER:PASS@TARGET
+psexec.py DOMAIN/USER:PASS@TARGET
+wmiexec.py DOMAIN/USER:PASS@TARGET
+
+# --- Active Directory (autres) ---
+certipy find -u USER@DOMAIN -p PASS -dc-ip DC_IP -vulnerable
+ldapdomaindump -u 'DOMAIN\USER' -p PASS TARGET
+nxc ldap TARGET -u USER -p PASS --bloodhound --collection All
+mitm6 -d DOMAIN
+
+# --- Cassage de mots de passe ---
+hashcat -m 1000 hashes.txt WORDLIST
+john --wordlist=WORDLIST hashes.txt
+hydra -L users.txt -P WORDLIST TARGET ssh
