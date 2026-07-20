@@ -204,9 +204,8 @@ def logs(
     console.print(f"[dim]rejouer le dernier : pentbox logs {mission} --play[/]")
 
 
-@app.command("list")
-def list_missions() -> None:
-    """Liste les missions / conteneurs pentbox."""
+def _show_missions() -> None:
+    """Affiche la table des missions (ou un message s'il n'y en a aucune)."""
     with _errors():
         rows = container.list_missions()
     if not rows:
@@ -226,6 +225,12 @@ def list_missions() -> None:
             r["comment"] or "[dim]-[/]",
         )
     console.print(table)
+
+
+@app.command("list")
+def list_missions() -> None:
+    """Liste les missions / conteneurs pentbox."""
+    _show_missions()
 
 
 def _human_size(n: int) -> str:
@@ -274,9 +279,11 @@ def info(
         None, help="Mission à inspecter (vide = catalogue des images)."
     ),
 ) -> None:
-    """Détaille une mission — ou, sans argument, liste les images disponibles."""
+    """Détaille une mission — ou, sans argument, un récap images + missions."""
     if mission is None:
         _show_images()
+        console.print()
+        _show_missions()
         return
     with _errors():
         data = container.mission_info(mission)
