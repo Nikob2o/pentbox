@@ -31,6 +31,7 @@ pentbox --help
 ```bash
 pentbox install kali --build     # build local (ou pull si un registre est configuré)
 pentbox create mission1          # crée + démarre une mission (workspace persistant)
+pentbox create mission1 --desktop # + bureau XFCE via navigateur : http://localhost:6080/vnc.html
 pentbox exec mission1            # shell interactif (enregistré en asciinema)
 pentbox list                     # missions actives
 pentbox logs mission1 --play     # rejoue la dernière session

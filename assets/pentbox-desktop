@@ -1,0 +1,35 @@
+#!/bin/sh
+# pentbox — démarre un bureau XFCE accessible via navigateur (noVNC).
+# Lancé par l'entrypoint quand PENTBOX_DESKTOP=1. En réseau host, le port noVNC
+# est sur localhost uniquement (bind 127.0.0.1) et le VNC est sans auth : accès
+# local mono-utilisateur. NE PAS exposer le port publiquement.
+set -e
+
+DISP="${PENTBOX_DESKTOP_DISPLAY:-1}"
+NOVNC_PORT="${PENTBOX_DESKTOP_PORT:-6080}"
+VNC_PORT=$((5900 + DISP))
+GEOMETRY="${PENTBOX_DESKTOP_GEOMETRY:-1600x900}"
+
+# xstartup : lance XFCE (avec dbus si dispo).
+mkdir -p "$HOME/.vnc"
+cat > "$HOME/.vnc/xstartup" <<'XEOF'
+#!/bin/sh
+unset SESSION_MANAGER
+unset DBUS_SESSION_BUS_ADDRESS
+if command -v dbus-launch >/dev/null 2>&1; then
+    exec dbus-launch --exit-with-session startxfce4
+fi
+exec startxfce4
+XEOF
+chmod +x "$HOME/.vnc/xstartup"
+
+# Repartir propre si un display résiduel traîne.
+vncserver -kill ":$DISP" >/dev/null 2>&1 || true
+rm -f "/tmp/.X${DISP}-lock" "/tmp/.X11-unix/X${DISP}" 2>/dev/null || true
+
+# Serveur X virtuel + VNC (TigerVNC), localhost, sans auth.
+vncserver ":$DISP" -SecurityTypes None -localhost yes -geometry "$GEOMETRY" -depth 24
+
+# noVNC (websockify) → VNC, en écoute sur localhost uniquement.
+NOVNC_WEB=/usr/share/novnc
+exec websockify --web "$NOVNC_WEB" "127.0.0.1:$NOVNC_PORT" "localhost:$VNC_PORT"

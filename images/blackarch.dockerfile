@@ -28,6 +28,12 @@ RUN pacman -Sy --noconfirm --needed archlinux-keyring blackarch-keyring \
          impacket netexec certipy mitm6 coercer enum4linux-ng python-ldapdomaindump \
     && pacman -Scc --noconfirm
 
+# --- Bureau graphique (XFCE + VNC + noVNC), activé à la demande par --desktop  #
+RUN pacman -S --noconfirm --needed \
+      xfwm4 xfdesktop xfce4-panel xfce4-terminal xfce4-session xfce4-settings \
+      tigervnc novnc python-websockify dbus xorg-server xorg-xinit ttf-dejavu \
+    && pacman -Scc --noconfirm
+
 # --- Utilisateur non-root (UID/GID alignés sur l'host) --------------------- #
 RUN groupadd -g "$HOST_GID" "$USERNAME" \
     && useradd -m -u "$HOST_UID" -g "$HOST_GID" -s /usr/bin/zsh "$USERNAME" \
@@ -39,8 +45,9 @@ RUN groupadd -g "$HOST_GID" "$USERNAME" \
 COPY assets/skel/ /home/${USERNAME}/
 COPY assets/entrypoint.sh /usr/local/bin/pentbox-entrypoint
 COPY assets/pentbox-shell /usr/local/bin/pentbox-shell
+COPY assets/pentbox-desktop /usr/local/bin/pentbox-desktop
 COPY assets/history-templates /opt/pentbox/history-templates
-RUN chmod +x /usr/local/bin/pentbox-entrypoint /usr/local/bin/pentbox-shell \
+RUN chmod +x /usr/local/bin/pentbox-entrypoint /usr/local/bin/pentbox-shell /usr/local/bin/pentbox-desktop \
     && chown -R "$HOST_UID:$HOST_GID" /home/${USERNAME}
 
 LABEL org.opencontainers.image.title="pentbox-blackarch" \

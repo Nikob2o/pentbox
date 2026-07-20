@@ -50,6 +50,7 @@ LABEL_MISSION = "pentbox.mission"
 LABEL_FLAVOR = "pentbox.flavor"
 LABEL_CREATED = "pentbox.created"
 LABEL_COMMENT = "pentbox.comment"
+LABEL_DESKTOP = "pentbox.desktop"  # port noVNC si desktop activé
 
 WORKSPACE_MOUNT = "/workspace"          # propre à la mission (rw)
 MY_RESOURCES_MOUNT = "/opt/my-resources"  # partagé entre missions (rw)
@@ -405,6 +406,8 @@ def create_mission(
     devices: list[str] | None = None,
     network: str = "host",
     x11: bool = False,
+    desktop: bool = False,
+    desktop_port: int = 6080,
 ) -> str:
     """Crée (et démarre) le conteneur d'une mission avec son workspace persistant."""
     client = _client()
@@ -430,6 +433,12 @@ def create_mission(
             "partagés) — ajoute `--network bridge`."
         )
 
+    if desktop and network != "host":
+        raise PentboxError(
+            "le desktop nécessite le réseau host (défaut) pour être joignable sur "
+            "localhost — retire `--network`."
+        )
+
     for dev in devices or []:
         host_dev = dev.split(":", 1)[0]
         if not Path(host_dev).exists():
@@ -446,6 +455,8 @@ def create_mission(
     }
     if comment:
         labels[LABEL_COMMENT] = comment
+    if desktop:
+        labels[LABEL_DESKTOP] = str(desktop_port)
 
     volumes = {
         str(workspace): {"bind": WORKSPACE_MOUNT, "mode": "rw"},
@@ -469,6 +480,11 @@ def create_mission(
         if xauth and Path(xauth).exists():
             volumes[xauth] = {"bind": xauth, "mode": "ro"}
             environment.setdefault("XAUTHORITY", xauth)
+
+    # Bureau graphique (noVNC) optionnel — démarré par l'entrypoint.
+    if desktop:
+        environment["PENTBOX_DESKTOP"] = "1"
+        environment["PENTBOX_DESKTOP_PORT"] = str(desktop_port)
 
     create_kwargs = dict(
         command=["sleep", "infinity"],  # garde le conteneur vivant pour `exec`
@@ -551,6 +567,10 @@ def mission_info(mission: str) -> dict:
         "my_resources": mounts.get(MY_RESOURCES_MOUNT, "?"),
         "resources": mounts.get(RESOURCES_MOUNT, "?"),
         "comment": container.labels.get(LABEL_COMMENT, ""),
+        "desktop": (
+            f"http://localhost:{container.labels[LABEL_DESKTOP]}/vnc.html"
+            if LABEL_DESKTOP in container.labels else ""
+        ),
         "container": container.name,
     }
 
