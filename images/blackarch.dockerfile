@@ -38,7 +38,13 @@ RUN pacman -S --noconfirm --needed \
 # wireguard-go = implémentation userspace : wg-quick bascule dessus quand le
 # module noyau wireguard n'est pas exposé au conteneur → aucun modprobe requis
 # côté hôte, le tunnel monte avec /dev/net/tun + NET_ADMIN.
-RUN pacman -S --noconfirm --needed openvpn wireguard-tools wireguard-go \
+# Absent des dépôts Arch/BlackArch (AUR only) → compilé depuis les sources avec
+# Go, toolchain purgé dans le MÊME layer (comme NetExec/rustup côté kali).
+RUN pacman -S --noconfirm --needed openvpn wireguard-tools go \
+    && git clone --depth 1 https://git.zx2c4.com/wireguard-go /tmp/wg-go \
+    && ( cd /tmp/wg-go && go build -o /usr/bin/wireguard-go . ) \
+    && pacman -Rns --noconfirm go \
+    && rm -rf /tmp/wg-go /root/.cache/go-build \
     && pacman -Scc --noconfirm
 
 # --- Utilisateur non-root (UID/GID alignés sur l'host) --------------------- #
