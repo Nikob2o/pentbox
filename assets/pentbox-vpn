@@ -1,0 +1,25 @@
+#!/bin/sh
+# pentbox — connecte le VPN de la mission (OpenVPN ou WireGuard, auto-détecté).
+# Lancé EN ROOT (via sudo) par l'entrypoint quand une mission a --vpn. Config
+# passée en $1 (ou via PENTBOX_VPN). Nécessite NET_ADMIN + /dev/net/tun + un
+# réseau NON-host (le wrapper force bridge) → tunnel isolé dans la mission, pas
+# de fuite vers le trafic de l'hôte.
+set -u
+cfg="${1:-${PENTBOX_VPN:-}}"
+[ -z "$cfg" ] && exit 0
+if [ ! -f "$cfg" ]; then
+    echo "pentbox-vpn: config introuvable: $cfg" >&2
+    exit 1
+fi
+
+log=/tmp/pentbox-vpn.log
+if grep -qiE '^[[:space:]]*\[(Interface|Peer)\]' "$cfg"; then
+    echo "pentbox-vpn: WireGuard (wg-quick up pentbox)" > "$log"
+    mkdir -p /etc/wireguard
+    install -m 600 "$cfg" /etc/wireguard/pentbox.conf 2>/dev/null || cp "$cfg" /etc/wireguard/pentbox.conf
+    wg-quick up pentbox >>"$log" 2>&1
+else
+    echo "pentbox-vpn: OpenVPN (--config $cfg)" > "$log"
+    openvpn --config "$cfg" --daemon --writepid /tmp/pentbox-vpn.pid \
+            --log-append "$log" --script-security 2
+fi

@@ -51,6 +51,7 @@ LABEL_FLAVOR = "pentbox.flavor"
 LABEL_CREATED = "pentbox.created"
 LABEL_COMMENT = "pentbox.comment"
 LABEL_DESKTOP = "pentbox.desktop"  # port noVNC si desktop activé
+LABEL_VPN = "pentbox.vpn"          # nom de la config VPN si activé
 
 WORKSPACE_MOUNT = "/workspace"          # propre à la mission (rw)
 MY_RESOURCES_MOUNT = "/opt/my-resources"  # partagé entre missions (rw)
@@ -408,6 +409,7 @@ def create_mission(
     x11: bool = False,
     desktop: bool = False,
     desktop_port: int = 6080,
+    vpn: str | None = None,
 ) -> str:
     """Crée (et démarre) le conteneur d'une mission avec son workspace persistant."""
     client = _client()
@@ -439,7 +441,20 @@ def create_mission(
             "localhost — retire `--network`."
         )
 
-    for dev in devices or []:
+    dev_list = list(devices or [])
+    vpn_src = None
+    if vpn:
+        if desktop:
+            raise PentboxError("--vpn et --desktop sont incompatibles (desktop=host, vpn=bridge).")
+        vpn_src = Path(vpn).expanduser()
+        if not vpn_src.is_file():
+            raise PentboxError(f"config VPN introuvable : {vpn}")
+        if network == "host":
+            network = "bridge"  # VPN isolé — sinon le tunnel routerait le trafic de l'host
+        if "/dev/net/tun" not in dev_list:
+            dev_list.append("/dev/net/tun")
+
+    for dev in dev_list:
         host_dev = dev.split(":", 1)[0]
         if not Path(host_dev).exists():
             raise PentboxError(f"device introuvable sur l'host : {host_dev}")
@@ -457,6 +472,8 @@ def create_mission(
         labels[LABEL_COMMENT] = comment
     if desktop:
         labels[LABEL_DESKTOP] = str(desktop_port)
+    if vpn_src is not None:
+        labels[LABEL_VPN] = vpn_src.name
 
     volumes = {
         str(workspace): {"bind": WORKSPACE_MOUNT, "mode": "rw"},
@@ -486,6 +503,11 @@ def create_mission(
         environment["PENTBOX_DESKTOP"] = "1"
         environment["PENTBOX_DESKTOP_PORT"] = str(desktop_port)
 
+    # VPN optionnel — config montée en ro, connectée par l'entrypoint.
+    if vpn_src is not None:
+        volumes[str(vpn_src.resolve())] = {"bind": "/opt/pentbox/vpn.conf", "mode": "ro"}
+        environment["PENTBOX_VPN"] = "/opt/pentbox/vpn.conf"
+
     create_kwargs = dict(
         command=["sleep", "infinity"],  # garde le conteneur vivant pour `exec`
         name=name,
@@ -497,10 +519,12 @@ def create_mission(
         stdin_open=True,
         detach=True,
     )
-    if devices:
-        create_kwargs["devices"] = devices
+    if dev_list:
+        create_kwargs["devices"] = dev_list
     if ports:
         create_kwargs["ports"] = _parse_ports(ports)
+    if vpn_src is not None:
+        create_kwargs["cap_add"] = ["NET_ADMIN"]
 
     container = client.containers.create(image, **create_kwargs)
     if start:
@@ -571,6 +595,7 @@ def mission_info(mission: str) -> dict:
             f"http://localhost:{container.labels[LABEL_DESKTOP]}/vnc.html"
             if LABEL_DESKTOP in container.labels else ""
         ),
+        "vpn": container.labels.get(LABEL_VPN, ""),
         "container": container.name,
     }
 

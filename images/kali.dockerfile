@@ -57,6 +57,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       firefox-esr materia-gtk-theme \
     && rm -rf /var/lib/apt/lists/*
 
+# --- VPN (OpenVPN + WireGuard), activé à la demande par --vpn -------------- #
+# wireguard-go = implémentation userspace : wg-quick bascule dessus quand le
+# module noyau wireguard n'est pas exposé au conteneur (cas courant) → aucun
+# modprobe requis côté hôte, le tunnel monte avec /dev/net/tun + NET_ADMIN.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      openvpn wireguard-tools wireguard-go \
+    && rm -rf /var/lib/apt/lists/*
+
 # --- Utilisateur non-root (UID/GID alignés sur l'host) --------------------- #
 RUN groupadd -g "$HOST_GID" "$USERNAME" \
     && useradd -m -u "$HOST_UID" -g "$HOST_GID" -s /usr/bin/zsh "$USERNAME" \
@@ -69,13 +77,14 @@ COPY assets/skel/ /home/${USERNAME}/
 COPY assets/entrypoint.sh /usr/local/bin/pentbox-entrypoint
 COPY assets/pentbox-shell /usr/local/bin/pentbox-shell
 COPY assets/pentbox-desktop /usr/local/bin/pentbox-desktop
+COPY assets/pentbox-vpn /usr/local/bin/pentbox-vpn
 COPY assets/history-templates /opt/pentbox/history-templates
 COPY assets/pentbox-wallpaper.png /opt/pentbox/wallpaper.png
 COPY assets/pentbox-logo.png /opt/pentbox/logo.png
 COPY assets/pentbox-run /usr/local/bin/pentbox-run
 COPY assets/menu/applications/ /usr/share/applications/
 COPY assets/menu/desktop-directories/ /usr/share/desktop-directories/
-RUN chmod +x /usr/local/bin/pentbox-entrypoint /usr/local/bin/pentbox-shell /usr/local/bin/pentbox-desktop /usr/local/bin/pentbox-run \
+RUN chmod +x /usr/local/bin/pentbox-entrypoint /usr/local/bin/pentbox-shell /usr/local/bin/pentbox-desktop /usr/local/bin/pentbox-run /usr/local/bin/pentbox-vpn \
     && chown -R "$HOST_UID:$HOST_GID" /home/${USERNAME}
 
 LABEL org.opencontainers.image.title="pentbox-kali" \

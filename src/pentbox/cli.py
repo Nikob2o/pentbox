@@ -10,6 +10,7 @@ d'outil — on manipule des conteneurs et des tags, jamais le contenu de l'image
 from __future__ import annotations
 
 from contextlib import contextmanager
+from pathlib import Path
 from typing import Optional
 
 import typer
@@ -132,6 +133,9 @@ def create(
     x11: bool = typer.Option(False, "--x11", help="Partage l'affichage X11 (apps GUI)."),
     desktop: bool = typer.Option(False, "--desktop", help="Bureau XFCE via navigateur (noVNC)."),
     desktop_port: int = typer.Option(6080, "--desktop-port", help="Port noVNC sur localhost."),
+    vpn: Optional[str] = typer.Option(
+        None, "--vpn", help="Config VPN (OpenVPN .ovpn / WireGuard .conf) montée au démarrage."
+    ),
     no_start: bool = typer.Option(False, "--no-start", help="Créer sans démarrer."),
 ) -> None:
     """Crée un conteneur pour une mission, avec son workspace persistant."""
@@ -149,6 +153,7 @@ def create(
             x11=x11,
             desktop=desktop,
             desktop_port=desktop_port,
+            vpn=vpn,
         )
     console.print(f"[green]✓[/] mission [bold]{mission}[/] créée (workspace : {workspace})")
     if not no_start:
@@ -157,6 +162,11 @@ def create(
             console.print(
                 f"  → desktop : [bold]http://localhost:{desktop_port}/vnc.html[/] "
                 "[dim](quelques secondes à démarrer)[/]"
+            )
+        if vpn:
+            console.print(
+                f"  → VPN : [bold]{Path(vpn).name}[/] "
+                "[dim](réseau bridge, tunnel isolé — vérifie avec `exec … ip a`)[/]"
             )
 
 
@@ -299,7 +309,7 @@ def info(
     table = Table(show_header=False, title=f"Mission « {mission} »")
     for key in (
         "mission", "flavor", "status", "image", "network",
-        "workspace", "my_resources", "resources", "comment", "desktop", "created", "container",
+        "workspace", "my_resources", "resources", "comment", "desktop", "vpn", "created", "container",
     ):
         table.add_row(f"[bold]{key}[/]", str(data[key]))
     console.print(table)
