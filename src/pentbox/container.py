@@ -51,6 +51,7 @@ LABEL_FLAVOR = "pentbox.flavor"
 LABEL_CREATED = "pentbox.created"
 LABEL_COMMENT = "pentbox.comment"
 LABEL_DESKTOP = "pentbox.desktop"  # port noVNC si desktop activé
+LABEL_DESKTOP_PASSWORD = "pentbox.desktop.password"  # mot de passe VNC (localhost)
 LABEL_VPN = "pentbox.vpn"          # nom de la config VPN si activé
 
 WORKSPACE_MOUNT = "/workspace"          # propre à la mission (rw)
@@ -409,6 +410,7 @@ def create_mission(
     x11: bool = False,
     desktop: bool = False,
     desktop_port: int = 6080,
+    desktop_password: str | None = None,
     vpn: str | None = None,
 ) -> str:
     """Crée (et démarre) le conteneur d'une mission avec son workspace persistant."""
@@ -472,6 +474,8 @@ def create_mission(
         labels[LABEL_COMMENT] = comment
     if desktop:
         labels[LABEL_DESKTOP] = str(desktop_port)
+        if desktop_password:
+            labels[LABEL_DESKTOP_PASSWORD] = desktop_password
     if vpn_src is not None:
         labels[LABEL_VPN] = vpn_src.name
 
@@ -502,6 +506,8 @@ def create_mission(
     if desktop:
         environment["PENTBOX_DESKTOP"] = "1"
         environment["PENTBOX_DESKTOP_PORT"] = str(desktop_port)
+        if desktop_password:
+            environment["PENTBOX_VNC_PASSWORD"] = desktop_password
 
     # VPN optionnel — config montée en ro, connectée par l'entrypoint.
     if vpn_src is not None:
@@ -542,6 +548,13 @@ def create_mission(
 
 def start_mission(mission: str) -> None:
     _get_container(_client(), mission).start()
+
+
+def ensure_running(mission: str) -> None:
+    """Démarre le conteneur s'il est arrêté (no-op s'il tourne déjà)."""
+    c = _get_container(_client(), mission)
+    if c.status != "running":
+        c.start()
 
 
 def stop_mission(mission: str) -> None:
@@ -595,6 +608,7 @@ def mission_info(mission: str) -> dict:
             f"http://localhost:{container.labels[LABEL_DESKTOP]}/vnc.html"
             if LABEL_DESKTOP in container.labels else ""
         ),
+        "desktop_pass": container.labels.get(LABEL_DESKTOP_PASSWORD, ""),
         "vpn": container.labels.get(LABEL_VPN, ""),
         "container": container.name,
     }

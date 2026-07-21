@@ -9,6 +9,8 @@ d'outil — on manipule des conteneurs et des tags, jamais le contenu de l'image
 
 from __future__ import annotations
 
+import secrets
+import string
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Optional
@@ -26,6 +28,12 @@ app = typer.Typer(
     no_args_is_help=True,
 )
 console = Console()
+
+
+def _gen_vnc_password() -> str:
+    """Mot de passe VNC aléatoire (8 car. — limite de l'auth VNC)."""
+    alphabet = string.ascii_letters + string.digits
+    return "".join(secrets.choice(alphabet) for _ in range(8))
 
 
 def _version_callback(value: bool) -> None:
@@ -133,6 +141,10 @@ def create(
     x11: bool = typer.Option(False, "--x11", help="Partage l'affichage X11 (apps GUI)."),
     desktop: bool = typer.Option(False, "--desktop", help="Bureau XFCE via navigateur (noVNC)."),
     desktop_port: int = typer.Option(6080, "--desktop-port", help="Port noVNC sur localhost."),
+    desktop_password: Optional[str] = typer.Option(
+        None, "--desktop-password",
+        help="Mot de passe VNC (défaut : généré aléatoirement quand --desktop).",
+    ),
     vpn: Optional[str] = typer.Option(
         None, "--vpn", help="Config VPN (OpenVPN .ovpn / WireGuard .conf) montée au démarrage."
     ),
@@ -140,6 +152,8 @@ def create(
 ) -> None:
     """Crée un conteneur pour une mission, avec son workspace persistant."""
     resolved_image = image or config.load_config()["defaults"]["image"]
+    # Desktop protégé par mot de passe VNC (généré si non fourni) — plus de no-auth.
+    vnc_password = (desktop_password or _gen_vnc_password()) if desktop else None
     with _errors():
         workspace = container.create_mission(
             mission,
@@ -153,16 +167,18 @@ def create(
             x11=x11,
             desktop=desktop,
             desktop_port=desktop_port,
+            desktop_password=vnc_password,
             vpn=vpn,
         )
     console.print(f"[green]✓[/] mission [bold]{mission}[/] créée (workspace : {workspace})")
     if not no_start:
-        console.print(f"  → shell : [bold]pentbox exec {mission}[/]")
+        console.print(f"  → shell : [bold]pentbox shell {mission}[/]")
         if desktop:
             console.print(
                 f"  → desktop : [bold]http://localhost:{desktop_port}/vnc.html[/] "
                 "[dim](quelques secondes à démarrer)[/]"
             )
+            console.print(f"  → mot de passe VNC : [bold]{vnc_password}[/]")
         if vpn:
             console.print(
                 f"  → VPN : [bold]{Path(vpn).name}[/] "
@@ -198,6 +214,21 @@ def run_exec(
     do_log = config.load_config()["logging"]["enabled"] if log is None else log
     with _errors():
         code = container.exec_mission(mission, command, log=do_log)
+    raise typer.Exit(code=code)
+
+
+@app.command()
+def shell(
+    mission: str = typer.Argument(..., help="Mission dans laquelle ouvrir un shell."),
+    log: Optional[bool] = typer.Option(
+        None, "--log/--no-log", help="Enregistrer la session en asciinema (défaut : config)."
+    ),
+) -> None:
+    """Ouvre un shell dans une mission — la démarre d'abord si elle est arrêtée."""
+    do_log = config.load_config()["logging"]["enabled"] if log is None else log
+    with _errors():
+        container.ensure_running(mission)
+        code = container.exec_mission(mission, log=do_log)
     raise typer.Exit(code=code)
 
 
@@ -309,7 +340,8 @@ def info(
     table = Table(show_header=False, title=f"Mission « {mission} »")
     for key in (
         "mission", "flavor", "status", "image", "network",
-        "workspace", "my_resources", "resources", "comment", "desktop", "vpn", "created", "container",
+        "workspace", "my_resources", "resources", "comment",
+        "desktop", "desktop_pass", "vpn", "created", "container",
     ):
         table.add_row(f"[bold]{key}[/]", str(data[key]))
     console.print(table)

@@ -2,8 +2,9 @@
 # pentbox — démarre un bureau XFCE accessible via navigateur (noVNC).
 # Lancé par l'entrypoint quand PENTBOX_DESKTOP=1. Pilote Xvnc DIRECTEMENT (sa
 # CLI est stable entre distros, contrairement au wrapper vncserver qui diffère
-# entre Debian et Arch). localhost only (bind 127.0.0.1), sans auth VNC : accès
-# local mono-utilisateur. NE PAS exposer le port publiquement.
+# entre Debian et Arch). localhost only (bind 127.0.0.1). Auth VNC par mot de
+# passe si PENTBOX_VNC_PASSWORD est posé (le navigateur le demandera), sinon
+# sans auth. NE PAS exposer le port publiquement.
 set -e
 
 DISP="${PENTBOX_DESKTOP_DISPLAY:-1}"
@@ -15,9 +16,30 @@ GEOMETRY="${PENTBOX_DESKTOP_GEOMETRY:-1600x900}"
 # Repartir propre si un display résiduel traîne.
 rm -f "/tmp/.X${DISP}-lock" "/tmp/.X11-unix/X${DISP}" 2>/dev/null || true
 
-# Serveur X virtuel + VNC : Xvnc en direct, localhost, sans auth.
+# Authentification VNC : mot de passe (VncAuth) si PENTBOX_VNC_PASSWORD est posé,
+# sinon aucune. Génère le fichier passwd VNC standard avec l'outil dispo :
+# `vncpasswd -f` (TigerVNC, présent sur BlackArch) ou `x11vnc -storepasswd`
+# (repli sur Debian, où TigerVNC ne fournit plus vncpasswd).
+VNC_AUTH="-SecurityTypes None"
+if [ -n "${PENTBOX_VNC_PASSWORD:-}" ]; then
+    mkdir -p "$HOME/.vnc"
+    pwfile="$HOME/.vnc/passwd"
+    if command -v vncpasswd >/dev/null 2>&1; then
+        printf '%s' "$PENTBOX_VNC_PASSWORD" | vncpasswd -f > "$pwfile" 2>/dev/null
+    elif command -v x11vnc >/dev/null 2>&1; then
+        x11vnc -storepasswd "$PENTBOX_VNC_PASSWORD" "$pwfile" >/dev/null 2>&1
+    fi
+    if [ -s "$pwfile" ]; then
+        chmod 600 "$pwfile"
+        VNC_AUTH="-SecurityTypes VncAuth -PasswordFile $pwfile"
+    fi
+fi
+
+# Serveur X virtuel + VNC : Xvnc en direct, localhost. $VNC_AUTH volontairement
+# non quoté (2 mots-clés attendus, valeurs sans espace ni glob).
+# shellcheck disable=SC2086
 Xvnc ":$DISP" -geometry "$GEOMETRY" -depth 24 -rfbport "$VNC_PORT" \
-     -SecurityTypes None -localhost -AlwaysShared >/tmp/pentbox-xvnc.log 2>&1 &
+     $VNC_AUTH -localhost -AlwaysShared >/tmp/pentbox-xvnc.log 2>&1 &
 
 # Attendre que le display soit prêt.
 i=0

@@ -52,9 +52,11 @@ RUN (git clone --depth 1 https://github.com/sullo/nikto /opt/nikto \
     || echo "WARN: installation de nikto échouée"
 
 # --- Bureau graphique (XFCE + VNC + noVNC), activé à la demande par --desktop  #
+# x11vnc n'est pas le serveur (c'est Xvnc) : on l'installe pour son `-storepasswd`
+# qui génère un fichier passwd VNC standard (Debian ne fournit plus `vncpasswd`).
 RUN apt-get update && apt-get install -y --no-install-recommends \
       xfce4 xfce4-terminal tigervnc-standalone-server novnc websockify dbus-x11 xfonts-base \
-      firefox-esr materia-gtk-theme \
+      firefox-esr materia-gtk-theme x11vnc \
     && rm -rf /var/lib/apt/lists/*
 
 # --- VPN (OpenVPN + WireGuard), activé à la demande par --vpn -------------- #
