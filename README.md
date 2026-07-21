@@ -26,8 +26,8 @@ mot de passe VNC, cohabitation de plusieurs bureaux, et **CI de publication**.
 > 📖 Guide détaillé (prérequis par distro, mises à jour, portabilité des données,
 > dépannage) : [`INSTALL.md`](./INSTALL.md).
 
-**Prérequis** : Docker (démon démarré, utilisateur dans le groupe `docker`) et
-`pipx` (Python 3.11+).
+**Prérequis** : un hôte **Linux x86_64** avec Docker (démon démarré, utilisateur
+dans le groupe `docker`) et `pipx` (Python 3.9+).
 
 **En une commande** (installe le CLI + récupère l'image) :
 

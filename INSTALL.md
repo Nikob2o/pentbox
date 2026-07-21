@@ -9,6 +9,29 @@ Il n'y a donc **rien à builder** côté utilisateur : Docker + le CLI, et c'est
 
 ---
 
+## Compatibilité
+
+Hôte **Linux x86_64** avec Docker + Python ≥ 3.9 + pipx. Vérifié :
+
+| Système hôte | Python | Statut |
+|---|---|---|
+| Arch / Manjaro | 3.13+ | ✅ |
+| Debian 12+ (bookworm) | 3.11+ | ✅ |
+| Ubuntu 24.04+ | 3.12+ | ✅ |
+| Ubuntu 22.04 / 20.04, Debian 11 | 3.10 / 3.9 | ✅ (backport `tomli` tiré automatiquement) |
+| Fedora récent | 3.12+ | ✅ |
+
+**Limites :**
+
+- **Architecture x86_64 (amd64) uniquement.** Les images sont buildées pour
+  x86_64 et embarquent des binaires x86_64 → **pas d'ARM natif** (Raspberry Pi,
+  Apple Silicon) sans émulation qemu (lente).
+- **Linux seulement.** macOS / Windows ne sont pas supportés : pentbox s'appuie
+  sur des mécanismes Linux (réseau `host` par défaut, mapping UID/GID,
+  `/dev/net/tun` pour le VPN, partage X11) que Docker Desktop ne reproduit pas.
+
+---
+
 ## 1. Prérequis
 
 ### Docker
@@ -35,7 +58,7 @@ sudo usermod -aG docker "$USER"
 > ⚠️ Après le `usermod`, **déconnecte-toi / reconnecte-toi** (ou lance `newgrp docker`)
 > pour que l'appartenance au groupe prenne effet. Vérifie avec `docker info`.
 
-### pipx (Python 3.11+)
+### pipx (Python 3.9+)
 
 ```bash
 # Arch          : sudo pacman -S python-pipx

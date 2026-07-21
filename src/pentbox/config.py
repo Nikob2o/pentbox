@@ -1,15 +1,19 @@
 """Chemins et configuration (norme XDG).
 
-Chemins figés + chargement de la config TOML (lot 5). On utilise `tomllib`
-(stdlib depuis 3.11) plutôt que PyYAML pour éviter tout souci de wheel sur
-Python 3.14.
+Chemins figés + chargement de la config TOML (lot 5). `tomllib` (stdlib ≥ 3.11)
+plutôt que PyYAML pour éviter tout souci de wheel ; repli sur le backport `tomli`
+en Python 3.9/3.10 (voir dépendance conditionnelle dans pyproject).
 """
 
 from __future__ import annotations
 
 import os
-import tomllib
 from pathlib import Path
+
+try:
+    import tomllib
+except ModuleNotFoundError:  # Python < 3.11
+    import tomli as tomllib
 
 APP_NAME = "pentbox"
 

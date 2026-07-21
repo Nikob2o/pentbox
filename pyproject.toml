@@ -7,7 +7,7 @@ name = "pentbox"
 version = "0.1.0"
 description = "Environnement de hacking conteneurisé, façon Exegol — maison, auto-hébergé, sans paywall."
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.9"
 license = "MIT"
 authors = [{ name = "Nicolas" }]
 keywords = ["pentest", "docker", "security", "exegol", "hacking", "redteam"]
@@ -21,6 +21,7 @@ dependencies = [
     "typer>=0.12",
     "docker>=7.0",
     "rich>=13.0",
+    "tomli>=2.0; python_version < '3.11'",   # backport de tomllib pour 3.9/3.10
 ]
 
 [project.optional-dependencies]
