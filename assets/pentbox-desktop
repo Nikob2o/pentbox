@@ -48,13 +48,20 @@ while [ ! -S "/tmp/.X11-unix/X${DISP}" ] && [ "$i" -lt 20 ]; do
     i=$((i + 1))
 done
 
-# Session de bureau XFCE sur ce display.
+# Session de bureau XFCE sur ce display. On lance un bus D-Bus de session et on
+# EXPORTE son adresse pour tout le script : sinon les `xfconf-query` plus bas
+# (thème, fond d'écran, logo) ne joignent pas le settings server. Sur Debian ça
+# passait via l'autodécouverte du bus sur la racine X (dbus-x11), MAIS Arch n'a
+# pas ce mécanisme → « Unable to contact settings server ». Bus partagé explicite
+# = robuste sur les deux bases. `dbus-launch --sh-syntax` imprime les variables,
+# `eval` les importe dans le shell courant.
 export DISPLAY=":$DISP"
-if command -v dbus-launch >/dev/null 2>&1; then
-    dbus-launch --exit-with-session startxfce4 >/tmp/pentbox-xfce.log 2>&1 &
-else
-    startxfce4 >/tmp/pentbox-xfce.log 2>&1 &
+if [ -z "${DBUS_SESSION_BUS_ADDRESS:-}" ] && command -v dbus-launch >/dev/null 2>&1; then
+    eval "$(dbus-launch --sh-syntax)"
+    export DBUS_SESSION_BUS_ADDRESS
+    [ -n "${DBUS_SESSION_BUS_PID:-}" ] && export DBUS_SESSION_BUS_PID
 fi
+startxfce4 >/tmp/pentbox-xfce.log 2>&1 &
 
 # Fond d'écran pentbox — appliqué une fois la session XFCE/xfconf prête.
 if [ -f /opt/pentbox/wallpaper.png ]; then
