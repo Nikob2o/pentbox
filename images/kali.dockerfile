@@ -31,7 +31,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # --- Arsenal Python (pipx, à l'échelle système via PIPX_BIN_DIR) ----------- #
 # Résilient façon Exegol : un outil qui échoue n'interrompt pas le build.
 RUN for pkg in \
-      impacket certipy-ad mitm6 ldapdomaindump coercer \
+      impacket certipy-ad mitm6 ldapdomaindump coercer bloodhound \
       "git+https://github.com/cddmp/enum4linux-ng" name-that-hash hashid updog; do \
       pipx install "$pkg" || echo "WARN: pipx install $pkg a échoué"; \
     done && rm -rf /root/.cache
@@ -50,6 +50,20 @@ RUN curl -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-too
 RUN (git clone --depth 1 https://github.com/sullo/nikto /opt/nikto \
       && ln -sf /opt/nikto/program/nikto.pl /usr/local/bin/nikto) \
     || echo "WARN: installation de nikto échouée"
+
+# --- Arsenal supplémentaire (binaires Go/Rust + Responder git) ------------- #
+# Résilient : un téléchargement qui échoue n'interrompt pas le build (WARN).
+RUN (curl -fsSL -o /usr/local/bin/kerbrute \
+        https://github.com/ropnop/kerbrute/releases/latest/download/kerbrute_linux_amd64 \
+      && chmod +x /usr/local/bin/kerbrute) || echo "WARN: kerbrute" ; \
+    (curl -fsSL https://github.com/epi052/feroxbuster/releases/latest/download/x86_64-linux-feroxbuster.tar.gz \
+        | tar -xz -C /usr/local/bin feroxbuster && chmod +x /usr/local/bin/feroxbuster) || echo "WARN: feroxbuster" ; \
+    (curl -fsSL https://github.com/ffuf/ffuf/releases/download/v2.1.0/ffuf_2.1.0_linux_amd64.tar.gz \
+        | tar -xz -C /usr/local/bin ffuf && chmod +x /usr/local/bin/ffuf) || echo "WARN: ffuf" ; \
+    (git clone --depth 1 https://github.com/lgandx/Responder /opt/responder \
+      && pip install --break-system-packages --no-cache-dir -r /opt/responder/requirements.txt \
+      && printf '#!/bin/sh\ncd /opt/responder && exec python3 Responder.py "$@"\n' > /usr/local/bin/responder \
+      && chmod +x /usr/local/bin/responder) || echo "WARN: responder"
 
 # --- Bureau graphique (XFCE + VNC + noVNC), activé à la demande par --desktop  #
 # x11vnc n'est pas le serveur (c'est Xvnc) : on l'installe pour son `-storepasswd`

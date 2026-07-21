@@ -26,6 +26,7 @@ RUN pacman -Sy --noconfirm --needed archlinux-keyring blackarch-keyring \
          python python-pip python-pipx \
          nmap masscan hydra medusa john hashcat sqlmap wfuzz gobuster whatweb dnsrecon proxychains-ng nikto \
          impacket netexec certipy mitm6 coercer enum4linux-ng python-ldapdomaindump \
+         bloodhound-python responder ffuf feroxbuster kerbrute \
     && pacman -Scc --noconfirm
 
 # --- Bureau graphique (XFCE + VNC + noVNC), activé à la demande par --desktop  #

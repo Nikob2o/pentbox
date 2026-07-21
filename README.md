@@ -78,6 +78,14 @@ pentbox rm mission1                 # supprime le conteneur (workspace conservé
 
 ## Fonctionnalités
 
+**Arsenal** — outils offensifs prêts à l'emploi, dans le même esprit qu'Exegol et
+enrichis au fil de l'eau : recon/scan (nmap, masscan, gobuster, ffuf,
+feroxbuster, whatweb, dnsrecon), Active Directory (impacket, netexec, certipy,
+mitm6, coercer, bloodhound-python, kerbrute, enum4linux-ng), poisoning/MITM
+(responder, mitm6), web (sqlmap, wfuzz, nikto), et cassage (john, hashcat,
+hydra, medusa). Identique sur les deux bases (installé via apt/pipx/binaires côté
+kali, pacman côté blackarch).
+
 **Workspaces persistants** — chaque mission a un dossier `~/.local/share/pentbox/workspaces/<mission>`
 monté sur `/workspace`. Les fichiers survivent à `rm` (seul le conteneur part).
 UID/GID de l'hôte injectés au build → pas de fichiers `root:root`.
