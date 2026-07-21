@@ -81,42 +81,73 @@ if [ -z "${DBUS_SESSION_BUS_ADDRESS:-}" ] && command -v dbus-launch >/dev/null 2
 fi
 startxfce4 >/tmp/pentbox-xfce.log 2>&1 &
 
-# Fond d'écran pentbox — appliqué une fois la session XFCE/xfconf prête.
-if [ -f /opt/pentbox/wallpaper.png ]; then
-    (
-        props=""
-        for _ in 1 2 3 4 5 6 7 8; do
-            sleep 2
-            props=$(xfconf-query -c xfce4-desktop -l 2>/dev/null | grep 'last-image$')
-            [ -n "$props" ] && break
+# Habillage pentbox (fond d'écran, thème, logo) — best-effort, en tâche de fond.
+# set +e LOCAL : ces réglages cosmétiques ne doivent JAMAIS interrompre le
+# démarrage si l'un échoue. (Piège : un `x=$(… | grep …)` sans résultat renvoie
+# 1 et, sous set -e, tuait tout le sous-shell dès le 1er tour sur Arch.)
+(
+    set +e
+    # Attendre que le panel/xfconf soient enregistrés (sans dépendre du backdrop,
+    # que xfdesktop ne crée pas d'emblée sur Arch).
+    for _ in 1 2 3 4 5 6 7 8; do
+        xfconf-query -c xfce4-panel -l >/dev/null 2>&1 && break
+        sleep 2
+    done
+
+    # Fond d'écran : on CRÉE la propriété backdrop (xfdesktop ne la pré-crée pas
+    # sur Arch, contrairement à Debian) pour chaque moniteur. Sortie TigerVNC =
+    # « VNC-0 » ; xrandr sert de source si présent, sinon on retombe dessus. On
+    # met aussi à jour d'éventuelles props déjà là (cas Debian/kali).
+    if [ -f /opt/pentbox/wallpaper.png ]; then
+        mons=$(xrandr --query 2>/dev/null | awk '/ connected/{print $1}')
+        [ -n "$mons" ] || mons="VNC-0"
+        for mon in $mons; do
+            base="/backdrop/screen0/monitor${mon}/workspace0"
+            xfconf-query -c xfce4-desktop -p "$base/last-image" -n -t string -s /opt/pentbox/wallpaper.png 2>/dev/null \
+                || xfconf-query -c xfce4-desktop -p "$base/last-image" -s /opt/pentbox/wallpaper.png 2>/dev/null
+            xfconf-query -c xfce4-desktop -p "$base/image-style" -n -t int -s 5 2>/dev/null \
+                || xfconf-query -c xfce4-desktop -p "$base/image-style" -s 5 2>/dev/null
         done
-        for p in $props; do
+        for p in $(xfconf-query -c xfce4-desktop -l 2>/dev/null | grep 'last-image$'); do
             xfconf-query -c xfce4-desktop -p "$p" -s /opt/pentbox/wallpaper.png 2>/dev/null
         done
-        for p in $(xfconf-query -c xfce4-desktop -l 2>/dev/null | grep 'image-style$'); do
-            xfconf-query -c xfce4-desktop -p "$p" -s 5 2>/dev/null   # 5 = zoomed
-        done
+        # PAS de `xfdesktop --reload` : xfdesktop applique le fond en LIVE dès que
+        # last-image change. De plus --reload peut BLOQUER (démarre un xfdesktop
+        # en avant-plan s'il ne joint pas l'instance) et figer la suite de
+        # l'habillage — c'était la cause du logo manquant sur Debian.
+    fi
 
-        # Thème sombre Materia (au runtime, en plus du XML baké).
-        xfconf-query -c xsettings -p /Net/ThemeName -s Materia-dark 2>/dev/null \
-            || xfconf-query -c xsettings -p /Net/ThemeName -n -t string -s Materia-dark 2>/dev/null
-        xfconf-query -c xfwm4 -p /general/theme -s Materia-dark 2>/dev/null \
-            || xfconf-query -c xfwm4 -p /general/theme -n -t string -s Materia-dark 2>/dev/null
+    # Thème sombre Materia (au runtime, en plus du XML baké).
+    xfconf-query -c xsettings -p /Net/ThemeName -s Materia-dark 2>/dev/null \
+        || xfconf-query -c xsettings -p /Net/ThemeName -n -t string -s Materia-dark 2>/dev/null
+    xfconf-query -c xfwm4 -p /general/theme -s Materia-dark 2>/dev/null \
+        || xfconf-query -c xfwm4 -p /general/theme -n -t string -s Materia-dark 2>/dev/null
 
-        # Logo pentbox comme icône du menu Applications (à la place du logo XFCE).
-        if [ -f /opt/pentbox/logo.png ]; then
-            changed=0
+    # Logo pentbox comme icône du menu Applications (à la place du logo XFCE).
+    # Le plugin applicationsmenu applique l'icône EN LIVE via xfconf → PAS de
+    # `xfce4-panel --restart` : lancé tôt (panel encore en démarrage), il
+    # réinitialise le panel et EFFACE le button-icon sur Debian. On attend juste
+    # que le plugin soit enregistré, puis on pose l'icône une fois.
+    if [ -f /opt/pentbox/logo.png ]; then
+        for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do
+            ampl=""
             for pl in $(xfconf-query -c xfce4-panel -l 2>/dev/null | grep -E '/plugins/plugin-[0-9]+$'); do
                 if [ "$(xfconf-query -c xfce4-panel -p "$pl" 2>/dev/null)" = "applicationsmenu" ]; then
-                    xfconf-query -c xfce4-panel -p "$pl/button-icon" -n -t string -s /opt/pentbox/logo.png 2>/dev/null
-                    xfconf-query -c xfce4-panel -p "$pl/show-button-title" -n -t bool -s false 2>/dev/null
-                    changed=1
+                    ampl="$pl"
+                    break
                 fi
             done
-            [ "$changed" = 1 ] && xfce4-panel --restart >/dev/null 2>&1 || true
-        fi
-    ) &
-fi
+            if [ -n "$ampl" ]; then
+                xfconf-query -c xfce4-panel -p "$ampl/button-icon" -n -t string -s /opt/pentbox/logo.png 2>/dev/null \
+                    || xfconf-query -c xfce4-panel -p "$ampl/button-icon" -s /opt/pentbox/logo.png 2>/dev/null
+                xfconf-query -c xfce4-panel -p "$ampl/show-button-title" -n -t bool -s false 2>/dev/null \
+                    || xfconf-query -c xfce4-panel -p "$ampl/show-button-title" -s false 2>/dev/null
+                break
+            fi
+            sleep 2
+        done
+    fi
+) &
 
 # Localiser les fichiers web noVNC (chemin différent selon la distro :
 # Debian = /usr/share/novnc, Arch = /usr/share/webapps/novnc).
