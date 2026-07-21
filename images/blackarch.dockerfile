@@ -47,6 +47,19 @@ RUN pacman -S --noconfirm --needed openvpn wireguard-tools go \
     && rm -rf /tmp/wg-go /root/.cache/go-build \
     && pacman -Scc --noconfirm
 
+# --- Wordlists (SecLists complet + rockyou décompressé au chemin standard) -- #
+# Paquet natif seclists (→ /usr/share/seclists). Wordlists PERSO : volume `resources`.
+RUN pacman -S --noconfirm --needed seclists && pacman -Scc --noconfirm \
+    && mkdir -p /usr/share/wordlists \
+    && ln -sf /usr/share/seclists /usr/share/wordlists/seclists \
+    && rk=/usr/share/seclists/Passwords/Leaked-Databases \
+    && if [ -f "$rk/rockyou.txt.tar.gz" ]; then \
+           tar -xf "$rk/rockyou.txt.tar.gz" -C /usr/share/wordlists/ \
+           && ln -sf /usr/share/wordlists/rockyou.txt "$rk/rockyou.txt"; \
+       elif [ -f "$rk/rockyou.txt" ]; then \
+           ln -sf "$rk/rockyou.txt" /usr/share/wordlists/rockyou.txt; \
+       fi
+
 # --- Utilisateur non-root (UID/GID alignés sur l'host) --------------------- #
 RUN groupadd -g "$HOST_GID" "$USERNAME" \
     && useradd -m -u "$HOST_UID" -g "$HOST_GID" -s /usr/bin/zsh "$USERNAME" \

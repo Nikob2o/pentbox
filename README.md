@@ -83,9 +83,14 @@ monté sur `/workspace`. Les fichiers survivent à `rm` (seul le conteneur part)
 UID/GID de l'hôte injectés au build → pas de fichiers `root:root`.
 
 **Ressources partagées** — `my-resources` (rw, perso, partagé entre missions) et
-`resources` (ro, wordlists/binaires). Les dotfiles (`.zshrc`, `.tmux.conf`) et
-l'historique de commandes se personnalisent **à chaud** via `my-resources`, sans
-rebuild.
+`resources` (ro, wordlists/binaires perso). Les dotfiles (`.zshrc`, `.tmux.conf`)
+et l'historique de commandes se personnalisent **à chaud** via `my-resources`,
+sans rebuild.
+
+**Wordlists** — **SecLists complet** est baké dans l'image
+(`/usr/share/seclists`), avec `rockyou.txt` décompressé au chemin standard
+(`/usr/share/wordlists/rockyou.txt`). Les listes de référence sont donc prêtes à
+l'emploi hors-ligne. Les wordlists **perso** passent par le volume `resources`.
 
 **Logging de session** — les shells interactifs sont enregistrés en asciinema
 (`--log` / config), rejouables avec `pentbox logs`.

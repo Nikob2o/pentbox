@@ -67,6 +67,22 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       openvpn wireguard-tools wireguard-go \
     && rm -rf /var/lib/apt/lists/*
 
+# --- Wordlists (SecLists complet + rockyou décompressé au chemin standard) -- #
+# Baké dans l'image (choix assumé : +~2 Go) pour avoir les listes de référence
+# prêtes à l'emploi dans /usr/share/seclists et /usr/share/wordlists. Les
+# wordlists PERSO passent par le volume partagé `resources` (ro).
+RUN git clone --depth 1 https://github.com/danielmiessler/SecLists /usr/share/seclists \
+    && rm -rf /usr/share/seclists/.git \
+    && mkdir -p /usr/share/wordlists \
+    && ln -sf /usr/share/seclists /usr/share/wordlists/seclists \
+    && rk=/usr/share/seclists/Passwords/Leaked-Databases \
+    && if [ -f "$rk/rockyou.txt.tar.gz" ]; then \
+           tar -xf "$rk/rockyou.txt.tar.gz" -C /usr/share/wordlists/ \
+           && ln -sf /usr/share/wordlists/rockyou.txt "$rk/rockyou.txt"; \
+       elif [ -f "$rk/rockyou.txt" ]; then \
+           ln -sf "$rk/rockyou.txt" /usr/share/wordlists/rockyou.txt; \
+       fi
+
 # --- Utilisateur non-root (UID/GID alignés sur l'host) --------------------- #
 RUN groupadd -g "$HOST_GID" "$USERNAME" \
     && useradd -m -u "$HOST_UID" -g "$HOST_GID" -s /usr/bin/zsh "$USERNAME" \
