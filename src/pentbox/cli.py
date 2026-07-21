@@ -140,7 +140,9 @@ def create(
     network: str = typer.Option("host", "--network", help="host (défaut) | bridge."),
     x11: bool = typer.Option(False, "--x11", help="Partage l'affichage X11 (apps GUI)."),
     desktop: bool = typer.Option(False, "--desktop", help="Bureau XFCE via navigateur (noVNC)."),
-    desktop_port: int = typer.Option(6080, "--desktop-port", help="Port noVNC sur localhost."),
+    desktop_port: int = typer.Option(
+        6080, "--desktop-port", help="Port noVNC préféré (le 1er libre à partir de là)."
+    ),
     desktop_password: Optional[str] = typer.Option(
         None, "--desktop-password",
         help="Mot de passe VNC (défaut : généré aléatoirement quand --desktop).",
@@ -155,6 +157,9 @@ def create(
     # Desktop protégé par mot de passe VNC (généré si non fourni) — plus de no-auth.
     vnc_password = (desktop_password or _gen_vnc_password()) if desktop else None
     with _errors():
+        # Port noVNC libre à partir du préféré → plusieurs desktops cohabitent.
+        if desktop:
+            desktop_port = container.free_desktop_port(desktop_port)
         workspace = container.create_mission(
             mission,
             resolved_image,

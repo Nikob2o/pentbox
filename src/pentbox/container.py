@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import json
 import os
+import socket
 import subprocess
 import sys
 import urllib.error
@@ -396,6 +397,36 @@ def ensure_shared_dirs() -> dict[str, str]:
 # --------------------------------------------------------------------------- #
 # Cycle de vie
 # --------------------------------------------------------------------------- #
+
+def free_desktop_port(start: int, limit: int = 64) -> int:
+    """Premier port TCP libre ≥ start sur localhost (côté host).
+
+    Le desktop tourne en réseau host : son port noVNC est visible sur le
+    localhost de l'hôte. On teste par bind() pour laisser plusieurs missions
+    graphiques cohabiter au lieu de se marcher dessus sur 6080. On exclut aussi
+    les ports déjà réservés par le label d'une autre mission desktop — même si
+    son websockify n'a pas encore bindé — pour éviter une collision entre deux
+    `create` rapprochés.
+    """
+    reserved: set[int] = set()
+    try:
+        for c in _client().containers.list(all=True, filters={"label": LABEL_DESKTOP}):
+            p = c.labels.get(LABEL_DESKTOP, "")
+            if p.isdigit():
+                reserved.add(int(p))
+    except DockerException:
+        pass
+    for port in range(start, start + limit):
+        if port in reserved:
+            continue
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            try:
+                s.bind(("127.0.0.1", port))
+                return port
+            except OSError:
+                continue
+    raise PentboxError(f"aucun port noVNC libre à partir de {start}.")
+
 
 def create_mission(
     mission: str,

@@ -13,9 +13,6 @@ VNC_PORT=$((5900 + DISP))
 GEOMETRY="${PENTBOX_DESKTOP_GEOMETRY:-1600x900}"
 : "${HOME:=/home/pentbox}"
 
-# Repartir propre si un display résiduel traîne.
-rm -f "/tmp/.X${DISP}-lock" "/tmp/.X11-unix/X${DISP}" 2>/dev/null || true
-
 # Authentification VNC : mot de passe (VncAuth) si PENTBOX_VNC_PASSWORD est posé,
 # sinon aucune. Génère le fichier passwd VNC standard avec l'outil dispo :
 # `vncpasswd -f` (TigerVNC, présent sur BlackArch) ou `x11vnc -storepasswd`
@@ -35,18 +32,39 @@ if [ -n "${PENTBOX_VNC_PASSWORD:-}" ]; then
     fi
 fi
 
-# Serveur X virtuel + VNC : Xvnc en direct, localhost. $VNC_AUTH volontairement
-# non quoté (2 mots-clés attendus, valeurs sans espace ni glob).
-# shellcheck disable=SC2086
-Xvnc ":$DISP" -geometry "$GEOMETRY" -depth 24 -rfbport "$VNC_PORT" \
-     $VNC_AUTH -localhost -AlwaysShared >/tmp/pentbox-xvnc.log 2>&1 &
-
-# Attendre que le display soit prêt.
-i=0
-while [ ! -S "/tmp/.X11-unix/X${DISP}" ] && [ "$i" -lt 20 ]; do
-    sleep 0.5
-    i=$((i + 1))
+# Serveur X virtuel + VNC. En réseau host, le socket X abstrait (@/tmp/.X11-unix/
+# X<n>) ET le port RFB sont partagés entre conteneurs → sans display libre, un 2e
+# desktop échouerait (« server already running »). On cherche donc un display
+# LIBRE en partant de $DISP. Le port noVNC (côté host, dans l'URL) est déjà choisi
+# libre par le wrapper ; ici seul le display/VNC interne est ajusté, ce que
+# websockify pontera de façon transparente. $VNC_AUTH non quoté volontairement
+# (2 mots-clés, valeurs sans espace/glob).
+xvnc_pid=""
+n="$DISP"
+while [ "$n" -le 64 ]; do
+    rm -f "/tmp/.X${n}-lock" "/tmp/.X11-unix/X${n}" 2>/dev/null || true
+    # shellcheck disable=SC2086
+    Xvnc ":$n" -geometry "$GEOMETRY" -depth 24 -rfbport $((5900 + n)) \
+         $VNC_AUTH -localhost -AlwaysShared >/tmp/pentbox-xvnc.log 2>&1 &
+    xvnc_pid=$!
+    i=0
+    while [ ! -S "/tmp/.X11-unix/X${n}" ] && kill -0 "$xvnc_pid" 2>/dev/null && [ "$i" -lt 16 ]; do
+        sleep 0.3
+        i=$((i + 1))
+    done
+    if [ -S "/tmp/.X11-unix/X${n}" ] && kill -0 "$xvnc_pid" 2>/dev/null; then
+        DISP="$n"
+        VNC_PORT=$((5900 + n))
+        break
+    fi
+    kill "$xvnc_pid" 2>/dev/null || true
+    xvnc_pid=""
+    n=$((n + 1))
 done
+if [ -z "$xvnc_pid" ]; then
+    echo "pentbox-desktop: aucun display VNC libre (:$DISP..:64)" >&2
+    exit 1
+fi
 
 # Session de bureau XFCE sur ce display. On lance un bus D-Bus de session et on
 # EXPORTE son adresse pour tout le script : sinon les `xfconf-query` plus bas
