@@ -132,6 +132,16 @@ assets/           # config partagée, copiée dans chaque image (UX commune)
 images/           # Dockerfiles par saveur (kali, blackarch)
 ```
 
+## Développement
+
+```bash
+pip install -e '.[dev]'   # paquet + dépendances de dev (pytest)
+pytest                    # suite de tests (helpers config / container / cli, sans Docker)
+```
+
+Les tests tournent aussi en CI à chaque push
+([`.github/workflows/test.yml`](./.github/workflows/test.yml)).
+
 ## Publication / CI
 
 Les images sont construites et publiées sur Docker Hub par GitHub Actions

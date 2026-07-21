@@ -23,8 +23,15 @@ dependencies = [
     "rich>=13.0",
 ]
 
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
 [project.scripts]
 pentbox = "pentbox.cli:app"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/pentbox"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
