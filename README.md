@@ -23,13 +23,31 @@ mot de passe VNC, cohabitation de plusieurs bureaux, et **CI de publication**.
 
 ## Installation
 
+**Prérequis** : Docker (démon démarré, utilisateur dans le groupe `docker`) et
+`pipx` (Python 3.11+).
+
+**En une commande** (installe le CLI + récupère l'image) :
+
 ```bash
-pipx install -e ~/Projets/pentbox      # installe la commande `pentbox`
-pentbox --help
+curl -sSL https://raw.githubusercontent.com/Nikob2o/pentbox/main/install.sh | sh
 ```
 
-Une fois un registre configuré (voir [Publication / CI](#publication--ci)),
-`pentbox install kali` **pull** l'image publiée — pas besoin de builder en local.
+**Ou à la main** :
+
+```bash
+pipx install "git+https://github.com/Nikob2o/pentbox.git"
+pentbox install kali        # pull l'image publiée (aucune config à écrire)
+```
+
+`pentbox install` **pull** directement l'image publiée sur Docker Hub — le
+namespace officiel est le défaut, donc **rien à configurer**. Pour builder en
+local ou viser un autre registre, voir [Publication / CI](#publication--ci).
+
+**Pour développer** (install éditable depuis les sources) :
+
+```bash
+pipx install -e ~/Projets/pentbox
+```
 
 ## Usage rapide
 
@@ -156,10 +174,11 @@ GitHub — ton PC n'a pas à être allumé.
 2. Repo → Settings → Secrets and variables → Actions, ajoute :
    - `DOCKERHUB_USERNAME` — ton user Docker Hub
    - `DOCKERHUB_TOKEN` — un token (Docker Hub → Account Settings → Security)
-3. Côté client, renseigne ton namespace dans `~/.config/pentbox/config.toml` :
+3. **Si tu forkes** et publies sous ton propre compte, pointe le client vers ton
+   namespace dans `~/.config/pentbox/config.toml` (sinon le défaut suffit) :
    ```toml
    [registry]
-   namespace = "ton-user-dockerhub"
+   namespace = "ton-user-dockerhub"   # vide "" = build local uniquement
    tag = "latest"
    ```
 

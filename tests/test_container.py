@@ -55,15 +55,21 @@ def tmp_config(tmp_path, monkeypatch):
     return tmp_path
 
 
-def test_resolve_image_local_without_namespace(tmp_config):
-    assert container.resolve_image("kali") == "pentbox-kali:local"
+def test_resolve_image_published_by_default(tmp_config):
+    # Sans config, le namespace par défaut vise l'image publiée sur Docker Hub.
+    assert container.resolve_image("kali") == f"{config.DEFAULT_NAMESPACE}/pentbox-kali:latest"
 
 
-def test_resolve_image_published_with_namespace(tmp_config):
+def test_resolve_image_custom_namespace(tmp_config):
     (tmp_config / "config.toml").write_text(
-        '[registry]\nnamespace = "nocoblas"\ntag = "latest"\n', encoding="utf-8"
+        '[registry]\nnamespace = "monorga"\ntag = "latest"\n', encoding="utf-8"
     )
-    assert container.resolve_image("blackarch") == "nocoblas/pentbox-blackarch:latest"
+    assert container.resolve_image("blackarch") == "monorga/pentbox-blackarch:latest"
+
+
+def test_resolve_image_local_when_namespace_empty(tmp_config):
+    (tmp_config / "config.toml").write_text('[registry]\nnamespace = ""\n', encoding="utf-8")
+    assert container.resolve_image("kali") == "pentbox-kali:local"
 
 
 def test_resolve_image_unknown_flavor(tmp_config):

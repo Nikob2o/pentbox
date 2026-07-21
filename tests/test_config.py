@@ -24,7 +24,13 @@ def test_load_config_defaults_when_absent(tmp_config):
     cfg = config.load_config()
     assert cfg["defaults"]["image"] == "kali"
     assert cfg["logging"]["enabled"] is True
-    assert cfg["registry"]["namespace"] == ""
+    # Défaut = namespace officiel → pull des images publiées sans config.
+    assert cfg["registry"]["namespace"] == config.DEFAULT_NAMESPACE
+
+
+def test_load_config_can_clear_namespace(tmp_config):
+    _write(tmp_config, '[registry]\nnamespace = ""\n')
+    assert config.load_config()["registry"]["namespace"] == ""
 
 
 def test_load_config_user_overrides(tmp_config):
@@ -54,7 +60,9 @@ def test_ensure_config_creates_then_preserves(tmp_config):
     assert config.CONFIG_FILE.read_text(encoding="utf-8") == "# perso\n"
 
 
-def test_registry_namespace_stripped(tmp_config):
-    assert config.registry_namespace() == ""
-    _write(tmp_config, '[registry]\nnamespace = "  nocoblas  "\n')
-    assert config.registry_namespace() == "nocoblas"
+def test_registry_namespace_default_and_strip(tmp_config):
+    # Sans config → namespace officiel par défaut.
+    assert config.registry_namespace() == config.DEFAULT_NAMESPACE
+    # Override + espaces superflus retirés.
+    _write(tmp_config, '[registry]\nnamespace = "  monorga  "\n')
+    assert config.registry_namespace() == "monorga"

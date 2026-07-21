@@ -29,14 +29,18 @@ MY_RESOURCES_DIR: Path = DATA_DIR / "my-resources"   # espace perso partagé (rw
 
 CONFIG_FILE: Path = CONFIG_DIR / "config.toml"
 
+# Namespace Docker Hub officiel des images pentbox (défaut → pull sans config).
+# Vide-le dans config.toml pour builder en local, ou remplace-le par le tien.
+DEFAULT_NAMESPACE = "nocoblas"
+
 # Valeurs par défaut, surchargées par le fichier config.toml s'il existe.
 _DEFAULT_CONFIG: dict = {
     "defaults": {"image": "kali"},
     "logging": {"enabled": True},
-    "registry": {"namespace": "", "tag": "latest"},
+    "registry": {"namespace": DEFAULT_NAMESPACE, "tag": "latest"},
 }
 
-_DEFAULT_CONFIG_TOML = """\
+_DEFAULT_CONFIG_TOML = f"""\
 # Configuration pentbox.
 
 [defaults]
@@ -46,8 +50,8 @@ image = "kali"        # saveur par défaut pour `create` (kali | blackarch)
 enabled = true        # enregistrer les shells interactifs en asciinema (.cast)
 
 [registry]
-namespace = ""        # ton user/orga Docker Hub (ex. "nikob") ; vide = build local seulement
-tag = "latest"        # tag à récupérer : latest (= core) ou "full" (arsenal complet)
+namespace = "{DEFAULT_NAMESPACE}"  # user/orga Docker Hub des images ; vide = build local uniquement
+tag = "latest"        # tag à récupérer
 """
 
 
