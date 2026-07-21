@@ -2,9 +2,10 @@
 # pentbox — démarre un bureau XFCE accessible via navigateur (noVNC).
 # Lancé par l'entrypoint quand PENTBOX_DESKTOP=1. Pilote Xvnc DIRECTEMENT (sa
 # CLI est stable entre distros, contrairement au wrapper vncserver qui diffère
-# entre Debian et Arch). localhost only (bind 127.0.0.1). Auth VNC par mot de
-# passe si PENTBOX_VNC_PASSWORD est posé (le navigateur le demandera), sinon
-# sans auth. NE PAS exposer le port publiquement.
+# entre Debian et Arch). websockify bind sur PENTBOX_DESKTOP_BIND (127.0.0.1 en
+# réseau host, 0.0.0.0 en bridge où le wrapper publie le port sur le localhost de
+# l'host). Auth VNC par mot de passe si PENTBOX_VNC_PASSWORD est posé (le
+# navigateur le demandera), sinon sans auth. NE PAS exposer le port publiquement.
 set -e
 
 DISP="${PENTBOX_DESKTOP_DISPLAY:-1}"
@@ -156,5 +157,7 @@ for d in /usr/share/novnc /usr/share/webapps/novnc; do
     [ -f "$d/vnc.html" ] && NOVNC_WEB="$d" && break
 done
 
-# noVNC (websockify) → VNC, en écoute sur localhost uniquement.
-exec websockify --web "$NOVNC_WEB" "127.0.0.1:$NOVNC_PORT" "localhost:$VNC_PORT"
+# noVNC (websockify) → VNC. Bind selon le réseau (localhost en host, 0.0.0.0 en
+# bridge — le port est alors publié sur le localhost de l'host par le wrapper).
+BIND="${PENTBOX_DESKTOP_BIND:-127.0.0.1}"
+exec websockify --web "$NOVNC_WEB" "$BIND:$NOVNC_PORT" "localhost:$VNC_PORT"

@@ -468,17 +468,9 @@ def create_mission(
             "partagés) — ajoute `--network bridge`."
         )
 
-    if desktop and network != "host":
-        raise PentboxError(
-            "le desktop nécessite le réseau host (défaut) pour être joignable sur "
-            "localhost — retire `--network`."
-        )
-
     dev_list = list(devices or [])
     vpn_src = None
     if vpn:
-        if desktop:
-            raise PentboxError("--vpn et --desktop sont incompatibles (desktop=host, vpn=bridge).")
         vpn_src = Path(vpn).expanduser()
         if not vpn_src.is_file():
             raise PentboxError(f"config VPN introuvable : {vpn}")
@@ -539,6 +531,9 @@ def create_mission(
         environment["PENTBOX_DESKTOP_PORT"] = str(desktop_port)
         if desktop_password:
             environment["PENTBOX_VNC_PASSWORD"] = desktop_password
+        # Host : websockify bind direct sur le localhost de l'host. Bridge : bind
+        # 0.0.0.0 dans le conteneur, le port est publié sur l'host (ci-dessous).
+        environment["PENTBOX_DESKTOP_BIND"] = "127.0.0.1" if network == "host" else "0.0.0.0"
 
     # VPN optionnel — config montée en ro, connectée par l'entrypoint.
     if vpn_src is not None:
@@ -558,8 +553,12 @@ def create_mission(
     )
     if dev_list:
         create_kwargs["devices"] = dev_list
-    if ports:
-        create_kwargs["ports"] = _parse_ports(ports)
+    port_map = _parse_ports(ports) if ports else {}
+    if desktop and network != "host":
+        # Desktop sur bridge : publier le port noVNC sur le localhost de l'host.
+        port_map[f"{desktop_port}/tcp"] = ("127.0.0.1", desktop_port)
+    if port_map:
+        create_kwargs["ports"] = port_map
     if vpn_src is not None:
         create_kwargs["cap_add"] = ["NET_ADMIN"]
 

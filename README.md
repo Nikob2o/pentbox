@@ -107,7 +107,11 @@ bridge pour **isoler le tunnel** (pas de fuite du trafic de l'hôte). WireGuard
 tombe sur son implémentation userspace si le module noyau n'est pas exposé — aucun
 `modprobe` requis côté hôte.
 
-> `--vpn` et `--desktop` ne sont pas encore combinables (host vs bridge) — prévu.
+**Desktop sur bridge & VPN + desktop** — `--desktop` marche en réseau host
+(défaut) comme en `--network bridge` (le port noVNC est alors publié sur le
+localhost de l'hôte). `--vpn` et `--desktop` sont donc **combinables** : les deux
+tournent sur bridge, tunnel isolé + bureau accessible. (Un VPN qui redirige *tout*
+le trafic — `0.0.0.0/0` — peut gêner l'accès noVNC ; préférer un split-tunnel.)
 
 ## Structure
 
