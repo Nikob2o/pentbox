@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pentbox"
-version = "0.0.1"
+version = "0.1.0"
 description = "Environnement de hacking conteneurisé, façon Exegol — maison, auto-hébergé, sans paywall."
 readme = "README.md"
 requires-python = ">=3.11"
